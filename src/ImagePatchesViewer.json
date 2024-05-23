@@ -1,0 +1,5 @@
+{
+    "name" : "Image Patches Viewer",
+    "version" : "1",
+    "dependencies" : ["Points", "Images", "Cluster"]
+}
