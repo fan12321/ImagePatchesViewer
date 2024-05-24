@@ -2,7 +2,8 @@
 #include <QtConcurrent>
 #include <QFuture>
 
-MemoryManager::MemoryManager()
+MemoryManager::MemoryManager(ImagePatchesViewer* p) :
+    _plugin(p)
 {
 
 }

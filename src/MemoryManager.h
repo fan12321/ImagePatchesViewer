@@ -11,13 +11,11 @@ class ImagePatchesViewer;
 
 class MemoryManager {
 public:
-    MemoryManager();
+    MemoryManager(ImagePatchesViewer*);
     ~MemoryManager();
 
     std::set<int>           indices;
     std::map<int, QString>  indexFilenameMap;
-
-    void setPlugin(ImagePatchesViewer* p) { _plugin = p; };
 
     void setImageDir(QString path) { _imageDir = path; };
     void setMaxImagesInCache(int n) { _cacheSize = n; };

@@ -21,15 +21,13 @@ ImagePatchesViewer::ImagePatchesViewer(const PluginFactory* factory) :
     _imageDir(""), 
     _validPath(false),
     _grid(nullptr),
-    _mm(new MemoryManager())
+    _mm(new MemoryManager(this))
 {
     // This line is mandatory if drag and drop behavior is required
     _currentDatasetNameLabel->setAcceptDrops(true);
 
     // Align text in the center
     _currentDatasetNameLabel->setAlignment(Qt::AlignCenter);
-
-    _mm->setPlugin(this);
 }
 
 void ImagePatchesViewer::init()

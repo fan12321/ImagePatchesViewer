@@ -100,7 +100,8 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     int numOfImages = _mm->indices.size();
     if (numOfImages == 0) return;
 
-    int numOfColumns = numOfImages > 5? 5: numOfImages;
+    // int numOfColumns = numOfImages > 5? 5: numOfImages;
+    int numOfColumns = (int) sqrt(numOfImages) + 1;
     int cnt = 0;
 
     QPainter qpainter(this);
