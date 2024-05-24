@@ -16,27 +16,19 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) :
     _imgWidth = img->size().width();
     _imgHeight = img->size().height();
     _ratio = _imgWidth / _imgHeight;
-    // 5GB of images in cache, wierd calculation order to prevent overflow
+
+    // 5GB of images in cache, wierd calculation to avoid overflow
     _maxImagesInCache = (int) ceil(5.0 * 1024.0 * (1024.0 / _imgWidth) * (1024.0 / _imgHeight) * (1.0 / sizeof(*img)));
     delete img;
+
+    // _mm->setMaxImagesInCache(0);
     _mm->setMaxImagesInCache(_maxImagesInCache);
 
-    // qDebug() << _maxImagesInCache;
+    emptyImage.fill(QColor(0, 0, 0, 0));
 
     show();
 };
 
-void GridWidget::unloadImages(std::set<int>& s) {
-    for (int index: s) {
-        _mm->unLoadImage(index);
-    }
-}
-
-void GridWidget::loadImages(std::set<int>& s) {
-    for (int index: s) {
-        _mm->loadImage(index);
-    }
-}
 
 void GridWidget::wheelEvent(QWheelEvent* event)
 {
@@ -127,7 +119,7 @@ void GridWidget::paintEvent(QPaintEvent* event) {
         qpainter.drawImage(
             margin + (gap + _imgWidth) * col, 
             margin + (gap + _imgHeight) * row, 
-            *img
+            (img == nullptr? emptyImage : *img)
         );
         cnt ++;
     }

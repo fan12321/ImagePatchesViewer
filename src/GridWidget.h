@@ -11,14 +11,14 @@
 
 #include "MemoryManager.h"
 
+class MemoryManager;
+
 class GridWidget : public QWidget
 {
     Q_OBJECT
 public:
     GridWidget(QWidget*, QString, MemoryManager*);
-
-    void unloadImages(std::set<int>&);
-    void loadImages(std::set<int>&);
+    ~GridWidget() { delete _mm; };
 
     void resetView() { _scale = 1.0; _transform.reset(); resize(_parent->size().width(), _parent->size().height()); }
     void paintEvent(QPaintEvent*) override;
@@ -43,6 +43,8 @@ private:
     float _imgWidth;
     float _imgHeight;
     float _ratio;
+
+    QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
 
 protected:
     void wheelEvent(QWheelEvent*) override;

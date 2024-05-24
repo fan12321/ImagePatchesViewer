@@ -23,7 +23,8 @@ using namespace mv::gui;
 /** Dataset reference used in this plugin is located in the ManiVault util namespace */
 using namespace mv::util;
 
-class QLabel;
+class GridWidget;
+class MemoryManager;
 
 class ImagePatchesViewer : public ViewPlugin
 {
@@ -50,6 +51,8 @@ public:
     void onDataEvent(mv::DatasetEvent* dataEvent);
 
     void imageDirInquire(mv::Dataset<Clusters>);
+
+    GridWidget* getGridWidget() { return _grid; };
 
 protected:
     DropWidget*             _dropWidget;                /** Widget for drag and drop behavior */

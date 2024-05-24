@@ -28,6 +28,8 @@ ImagePatchesViewer::ImagePatchesViewer(const PluginFactory* factory) :
 
     // Align text in the center
     _currentDatasetNameLabel->setAlignment(Qt::AlignCenter);
+
+    _mm->setPlugin(this);
 }
 
 void ImagePatchesViewer::init()
@@ -118,15 +120,16 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
 
     
     // TODO: change this!!!
-    _imageDir = QString("/home/fanchenchi/Desktop/ManiVault/projects/test_images");
-    _validPath = true;
-    // _imageDir = QFileDialog::getExistingDirectory(
-    //     nullptr,
-    //     tr("Image folder"),
-    //     _imageDir,
-    //     QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-    // );
-    // _validPath = !_imageDir.isNull();
+    // _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
+    // _validPath = true;
+
+    _imageDir = QFileDialog::getExistingDirectory(
+        nullptr,
+        tr("Image folder"),
+        _imageDir,
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    );
+    _validPath = !_imageDir.isNull();
 
 
     if (_validPath) {
@@ -187,14 +190,17 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
                 }
             }
 
-            _grid->unloadImages(toUnload);
-            _grid->loadImages(toLoad);
+            _mm->loadImages(toLoad);
+            _mm->unloadImages(toUnload, toLoad);
             
             if (toUnload.size() == 0 && toLoad.size() == 0) return;
             else {
                 _grid->resetView();
                 _grid->update();
+                // postpone the "free memory" action to prevent seg fault
+                _mm->deleteImages();
             }
+
         }
     }
 }
