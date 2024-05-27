@@ -7,9 +7,11 @@
 
 #include <map>
 #include <set>
+#include <vector>
 #include <future>
 
 #include "MemoryManager.h"
+#include "Grid.h"
 
 class MemoryManager;
 
@@ -20,7 +22,11 @@ public:
     GridWidget(QWidget*, QString, MemoryManager*);
     ~GridWidget() { delete _mm; };
 
-    void resetView() { _scale = 1.0; _transform.reset(); resize(_parent->size().width(), _parent->size().height()); }
+    void resetView() { 
+        _scale = 1.0; 
+        _transform.reset(); 
+        resize(_parent->size().width(), _parent->size().height()); 
+    }
     void paintEvent(QPaintEvent*) override;
 
 private:
@@ -33,7 +39,6 @@ private:
     QTransform                  _transform;
 
     float       _scale = 1.0;
-    int         _size = 128;
     int         _x = 0;
     int         _y = 0;
     int         _originX = 0;
@@ -43,6 +48,9 @@ private:
     float _imgWidth;
     float _imgHeight;
     float _ratio;
+
+    int _focusGrid;
+    std::vector<Grid*> _grids;
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
 

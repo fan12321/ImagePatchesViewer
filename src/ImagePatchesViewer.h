@@ -52,7 +52,7 @@ public:
 
     void imageDirInquire(mv::Dataset<Clusters>);
 
-    GridWidget* getGridWidget() { return _grid; };
+    GridWidget* getGridWidget() { return _gridWidget; };
 
 protected:
     DropWidget*             _dropWidget;                /** Widget for drag and drop behavior */
@@ -63,7 +63,7 @@ protected:
     bool                    _validPath;                 /** Check if "_imageDir" valid or not */
     QLabel*                 _currentDatasetNameLabel;   /** Label that show the current dataset name */
     MemoryManager*          _mm;
-    GridWidget*             _grid;
+    GridWidget*             _gridWidget;
 };
 
 /**

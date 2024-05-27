@@ -23,7 +23,11 @@ public:
     void unloadImages(std::set<int>&, std::set<int>&);
     void loadImages(std::set<int>&);
     int findImageToDrop(std::set<int>&);
-    void deleteImages() {for (auto it=pointersToRemove.begin(); it!=pointersToRemove.end(); it++) delete *it; };
+    void deleteImages() {
+        for (auto it=pointersToRemove.begin(); it!=pointersToRemove.end(); it++) {
+            delete *it;
+        }    
+    };
 
     QImage* getImage(int index) { return table[index]; };
 

@@ -45,6 +45,8 @@ set(PROJECT_SOURCES
     src/ImagePatchesViewer.json
     src/GridWidget.h
     src/GridWidget.cpp
+    src/Grid.h
+    src/Grid.cpp
     src/MemoryManager.h
     src/MemoryManager.cpp
 )

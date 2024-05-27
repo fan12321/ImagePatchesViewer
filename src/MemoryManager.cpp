@@ -28,21 +28,32 @@ int MemoryManager::findImageToDrop(std::set<int>& loads) {
 void MemoryManager::unloadImages(std::set<int>& unloads, std::set<int>& loads) {
     pointersToRemove.clear();
     for (int index: unloads) {
-        // cache still available, store in cache
+        // // cache still available, store in cache
+        // if (cache.size() < _cacheSize && !cache[index]) {
+        //     cache[index] = table[index];
+        // }
+        // else {
+        //     // find a spot in cache that will not soon be loaded
+        //     int toDrop = findImageToDrop(loads);
+        //     if (toDrop == -1) {
+        //         pointersToRemove.push_back(table[index]);
+        //     }
+        //     else {
+        //         pointersToRemove.push_back(cache[toDrop]);
+        //         cache.erase(toDrop);
+        //         cache[index] = table[index];
+        //     }
+        // }
+        // table.erase(index);
+        // indices.erase(index);
+
+
+        // Naive method
         if (cache.size() < _cacheSize && !cache[index]) {
             cache[index] = table[index];
         }
         else {
-            // find a spot in cache that will not soon be loaded
-            int toDrop = findImageToDrop(loads);
-            if (toDrop > -1) {
-                pointersToRemove.push_back(cache[toDrop]);
-                cache.erase(toDrop);
-                cache[index] = table[index];
-            }
-            else {
-                pointersToRemove.push_back(table[toDrop]);
-            }
+            pointersToRemove.push_back(table[index]);
         }
         table.erase(index);
         indices.erase(index);

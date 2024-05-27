@@ -20,7 +20,7 @@ ImagePatchesViewer::ImagePatchesViewer(const PluginFactory* factory) :
     _currentDatasetNameLabel(new QLabel()), 
     _imageDir(""), 
     _validPath(false),
-    _grid(nullptr),
+    _gridWidget(nullptr),
     _mm(new MemoryManager(this))
 {
     // This line is mandatory if drag and drop behavior is required
@@ -37,7 +37,7 @@ void ImagePatchesViewer::init()
     layout->setContentsMargins(0, 0, 0, 0);
 
     layout->addWidget(_currentDatasetNameLabel);
-    layout->addWidget(_grid, 1);
+    layout->addWidget(_gridWidget, 1);
 
     // Apply the layout
     getWidget().setLayout(layout);
@@ -118,16 +118,16 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
 
     
     // TODO: change this!!!
-    // _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
-    // _validPath = true;
+    _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
+    _validPath = true;
 
-    _imageDir = QFileDialog::getExistingDirectory(
-        nullptr,
-        tr("Image folder"),
-        _imageDir,
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-    );
-    _validPath = !_imageDir.isNull();
+    // _imageDir = QFileDialog::getExistingDirectory(
+    //     nullptr,
+    //     tr("Image folder"),
+    //     _imageDir,
+    //     QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    // );
+    // _validPath = !_imageDir.isNull();
 
 
     if (_validPath) {
@@ -139,7 +139,7 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
             _mm->indexFilenameMap[index] = fileName;
         }
         _mm->setImageDir(_imageDir);
-        _grid = new GridWidget(&getWidget(), _imageDir, _mm);
+        _gridWidget = new GridWidget(&getWidget(), _imageDir, _mm);
         _dropWidget->setShowDropIndicator(false);
     }
 }
@@ -193,8 +193,8 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
             
             if (toUnload.size() == 0 && toLoad.size() == 0) return;
             else {
-                _grid->resetView();
-                _grid->update();
+                _gridWidget->resetView();
+                _gridWidget->update();
                 // postpone the "free memory" action to prevent seg fault
                 _mm->deleteImages();
             }
