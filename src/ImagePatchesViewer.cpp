@@ -171,6 +171,8 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
             if (selectionSize == 0) return;
 
             auto selectionIndices = changedDataSet->getSelectionIndices();
+
+            _gridWidget->setIndices(selectionIndices);
             std::set<int> toLoad;
             std::set<int> toKeep;
             std::set<int> toUnload;

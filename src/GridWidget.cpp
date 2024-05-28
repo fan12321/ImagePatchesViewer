@@ -8,6 +8,11 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) :
     _imageDir(imageDir),
     _mm(mm)
 {
+
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), 
+        this, SLOT(ShowContextMenu(const QPoint&)));
+
     if (!parent) return;
     installEventFilter(this);
     resize(parent->size().width(), parent->size().height());
@@ -27,11 +32,45 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) :
     emptyImage.fill(QColor(0, 0, 0, 0));
 
     _grids.push_back(new Grid(parent->size().width()));
-    _grids.push_back(new Grid(parent->size().width()));
     _focusGrid = 0;
+    _gridCount = 1;
 
     show();
 };
+
+void GridWidget::setIndices(std::vector<unsigned int> indices) {
+    _grids[_focusGrid]->indices = indices;
+}
+
+void GridWidget::ShowContextMenu(const QPoint& pos) {
+    QMenu contextMenu(tr("Context menu"), this);
+
+    QAction action1("New selection", this);
+    connect(&action1, SIGNAL(triggered()), this, SLOT(newSelection()));
+    QAction action2("Delete selection", this);
+    connect(&action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
+
+    action1.setEnabled(_gridCount < 3);
+    action2.setEnabled(_gridCount != 1);
+
+    contextMenu.addAction(&action1);
+    contextMenu.addAction(&action2);
+
+
+    contextMenu.exec(mapToGlobal(pos));
+}
+
+void GridWidget::newSelection() {
+    _grids.push_back(new Grid(_parent->size().width()));
+    _focusGrid = _gridCount;
+    _gridCount += 1;
+}
+
+void GridWidget::deleteSelection() {
+    _grids.erase(_grids.begin() + _focusGrid);
+    _gridCount -= 1;
+    _focusGrid = (_focusGrid - 1) % _gridCount;
+}
 
 
 void GridWidget::wheelEvent(QWheelEvent* event)
@@ -70,7 +109,7 @@ void GridWidget::wheelEvent(QWheelEvent* event)
 
 void GridWidget::mousePressEvent(QMouseEvent* event) {
     Grid* grid;
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<_gridCount; i++) {
         grid = _grids[i];
         if (grid->inside(event->pos())) {
             _focusGrid = i;
@@ -118,10 +157,10 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     QPen qpen;
     qpen.setColor(QColor(255, 0, 0, 48));
 
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<_gridCount; i++) {
         Grid* grid = _grids[i];
 
-        int numOfImages = _mm->indices.size();
+        int numOfImages = grid->indices.size();
         int numOfColumns, numOfRows;
         if (numOfImages == 0) break;
         else if (numOfImages == 1) {
@@ -139,7 +178,7 @@ void GridWidget::paintEvent(QPaintEvent* event) {
         qpainter.scale(screenScaling, screenScaling);
 
         int cnt = 0;
-        for (int index: _mm->indices) {
+        for (int index: grid->indices) {
 
             int row = cnt / numOfColumns;
             int col = cnt % numOfColumns;

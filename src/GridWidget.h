@@ -29,6 +29,8 @@ public:
     }
     void paintEvent(QPaintEvent*) override;
 
+    void setIndices(std::vector<unsigned int>);
+
 private:
     bool eventFilter(QObject*, QEvent*);
 
@@ -50,6 +52,7 @@ private:
     float _ratio;
 
     int _focusGrid;
+    int _gridCount;
     std::vector<Grid*> _grids;
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
@@ -57,4 +60,11 @@ private:
 protected:
     void wheelEvent(QWheelEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
+
+
+
+public slots:
+    void ShowContextMenu(const QPoint&);
+    void newSelection();
+    void deleteSelection();
 };
