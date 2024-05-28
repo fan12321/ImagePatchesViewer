@@ -116,9 +116,7 @@ void GridWidget::paintEvent(QPaintEvent* event) {
 
     QPainter qpainter(this);
     QPen qpen;
-    qpen.setColor(QColor(255, 0, 0, 64));
-    qpen.setWidth(32);
-    qpainter.setPen(qpen);
+    qpen.setColor(QColor(255, 0, 0, 48));
 
     for (int i=0; i<2; i++) {
         Grid* grid = _grids[i];
@@ -147,12 +145,14 @@ void GridWidget::paintEvent(QPaintEvent* event) {
             int col = cnt % numOfColumns;
             QImage* img = _mm->getImage(index);
 
+            qpen.setWidth(96.0 / grid->_scale);
+            qpainter.setPen(qpen);
             if (i == _focusGrid) {
                 qpainter.drawRect(
-                    margin/2 + (gap + _imgWidth) * col, 
-                    margin/2 + (gap + _imgHeight) * row, 
-                    gap/2 + _imgWidth, 
-                    gap/2 + _imgHeight
+                    margin + (gap + _imgWidth) * col, 
+                    margin + (gap + _imgHeight) * row, 
+                    _imgWidth, 
+                    _imgHeight
                 );
             }
             qpainter.drawImage(
