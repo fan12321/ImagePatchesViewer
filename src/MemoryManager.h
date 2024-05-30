@@ -14,28 +14,23 @@ public:
     MemoryManager(ImagePatchesViewer*);
     ~MemoryManager();
 
-    std::set<int>           indices;
     std::map<int, QString>  indexFilenameMap;
 
     void setImageDir(QString path) { _imageDir = path; };
     void setMaxImagesInCache(int n) { _cacheSize = n; };
 
-    void unloadImages(std::set<int>&, std::set<int>&);
-    void loadImages(std::set<int>&);
-    int findImageToDrop(std::set<int>&);
-    void deleteImages() {
-        for (auto it=pointersToRemove.begin(); it!=pointersToRemove.end(); it++) {
-            delete *it;
-        }    
-    };
+    void unloadImages(std::vector<unsigned int>&);
+    void loadImages(std::vector<unsigned int>&);
 
-    QImage* getImage(int index) { return table[index]; };
+    int findImageToDrop(std::set<int>&);
+
+    QImage* getImage(int index) { return pointer[index]; };
 
 private:
-    ImagePatchesViewer*     _plugin;
-    std::map<int, QImage*>  table;
-    std::map<int, QImage*>  cache;
-    std::vector<QImage*>    pointersToRemove;
-    QString                 _imageDir;
-    int                     _cacheSize;
+    ImagePatchesViewer*                 _plugin;
+    std::map<unsigned int, QImage*>     pointer;
+    std::map<unsigned int, QImage*>     cache;
+    std::map<unsigned int, int>         count;
+    QString                             _imageDir;
+    int                                 _cacheSize;
 };

@@ -16,7 +16,5 @@ public:
     int         _originX = 0;
     int         _originY = 0;
     QTransform  _transform;
-
-private:
-    int size;
+    int         _size;
 };

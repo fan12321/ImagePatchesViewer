@@ -22,37 +22,36 @@ public:
     GridWidget(QWidget*, QString, MemoryManager*);
     ~GridWidget() { delete _mm; };
 
-    void resetView() { 
-        _scale = 1.0; 
+    void resetView() {
         _transform.reset(); 
         resize(_parent->size().width(), _parent->size().height()); 
     }
     void paintEvent(QPaintEvent*) override;
+    void paint(int, QPainter*, QPen*);
 
+    // update currently focused grid
     void setIndices(std::vector<unsigned int>);
+    std::vector<unsigned int> getIndices();
+    mv::Dataset<Points> _points;
 
 private:
     bool eventFilter(QObject*, QEvent*);
+    void changeGrid(int);
 
-    MemoryManager*              _mm;
+    MemoryManager*  _mm;
 
-    QString                     _imageDir;
-    QWidget*                    _parent;
-    QTransform                  _transform;
+    QString         _imageDir;
+    QWidget*        _parent;
+    QTransform      _transform;
 
-    float       _scale = 1.0;
-    int         _x = 0;
-    int         _y = 0;
-    int         _originX = 0;
-    int         _originY = 0;
-    int         _maxImagesInCache;
+    int   _maxImagesInCache;
     
     float _imgWidth;
     float _imgHeight;
     float _ratio;
 
-    int _focusGrid;
     int _gridCount;
+    int _currentGridId;
     std::vector<Grid*> _grids;
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);

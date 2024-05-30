@@ -10,7 +10,7 @@ MemoryManager::MemoryManager(ImagePatchesViewer* p) :
 
 MemoryManager::~MemoryManager()
 {
-    for (auto pair: table) delete pair.second;
+    for (auto pair: pointer) delete pair.second;
     for (auto pair: cache) delete pair.second;
 }
 
@@ -25,58 +25,16 @@ int MemoryManager::findImageToDrop(std::set<int>& loads) {
     return toDrop;
 }
 
-void MemoryManager::unloadImages(std::set<int>& unloads, std::set<int>& loads) {
-    pointersToRemove.clear();
-    for (int index: unloads) {
-        // // cache still available, store in cache
-        // if (cache.size() < _cacheSize && !cache[index]) {
-        //     cache[index] = table[index];
-        // }
-        // else {
-        //     // find a spot in cache that will not soon be loaded
-        //     int toDrop = findImageToDrop(loads);
-        //     if (toDrop == -1) {
-        //         pointersToRemove.push_back(table[index]);
-        //     }
-        //     else {
-        //         pointersToRemove.push_back(cache[toDrop]);
-        //         cache.erase(toDrop);
-        //         cache[index] = table[index];
-        //     }
-        // }
-        // table.erase(index);
-        // indices.erase(index);
-
-
-        // Naive method
-        if (cache.size() < _cacheSize && !cache[index]) {
-            cache[index] = table[index];
+void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
+    for (auto index: toLoad) {
+        if (count[index] > 0) {
+            
         }
         else {
-            pointersToRemove.push_back(table[index]);
-        }
-        table.erase(index);
-        indices.erase(index);
-    }
-}
-
-void MemoryManager::loadImages(std::set<int>& s) {
-    for (int index: s) {
-        if (cache[index]) {
-            table[index] = cache[index];
-            cache.erase(index);
-            indices.insert(index);
-        }
-        else {
-            indices.insert(index);
             QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
-
-            // QImage* img = new QImage(path);
-            // table[index] = img;
-
             QtConcurrent::task([this](QString p, int idx){
                 QImage* img = new QImage(p);
-                table[idx] = img;
+                pointer[idx] = img;
             })
             .withArguments(path, index)
             .spawn()
@@ -84,6 +42,20 @@ void MemoryManager::loadImages(std::set<int>& s) {
                 _plugin->getGridWidget()->update();
             });
 
+        }
+        count[index] += 1;
+    }
+}
+
+void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
+    for (auto index: toUnload) {
+        if (count[index] > 1) {
+            count[index] -= 1;
+        }
+        else if (count[index] == 1) {
+            count[index] = 0;
+            delete pointer[index];
+            pointer[index] = nullptr;
         }
     }
 }

@@ -166,39 +166,22 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
                 // _clusters->getGroupIndex() == changedDataSet->getGroupIndex() && 
                 // _clusters->getGroupIndex() != -1 
             ) {
+            _gridWidget->_points = changedDataSet;
             int selectionSize = changedDataSet->getSelectionSize();
 
             if (selectionSize == 0) return;
 
             auto selectionIndices = changedDataSet->getSelectionIndices();
 
+            std::vector<unsigned int> previousSelectionIndices = _gridWidget->getIndices();
             _gridWidget->setIndices(selectionIndices);
-            std::set<int> toLoad;
-            std::set<int> toKeep;
-            std::set<int> toUnload;
-            for (int index: selectionIndices) {
-                if (!_mm->indices.count(index)) {
-                    toLoad.insert(index);
-                }
-                else {
-                    toKeep.insert(index);
-                }
-            }
-            for (int index: _mm->indices) {
-                if (!toKeep.count(index)) {
-                    toUnload.insert(index);
-                }
-            }
 
-            _mm->loadImages(toLoad);
-            _mm->unloadImages(toUnload, toLoad);
-            
-            if (toUnload.size() == 0 && toLoad.size() == 0) return;
+            if (selectionIndices.size() == 0) return;
             else {
+                _mm->loadImages(selectionIndices);
                 _gridWidget->resetView();
                 _gridWidget->update();
-                // postpone the "free memory" action to prevent seg fault
-                _mm->deleteImages();
+                _mm->unloadImages(previousSelectionIndices);
             }
 
         }

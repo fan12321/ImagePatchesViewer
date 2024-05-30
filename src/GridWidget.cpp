@@ -32,14 +32,18 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) :
     emptyImage.fill(QColor(0, 0, 0, 0));
 
     _grids.push_back(new Grid(parent->size().width()));
-    _focusGrid = 0;
+    _currentGridId = 0;
     _gridCount = 1;
 
     show();
 };
 
 void GridWidget::setIndices(std::vector<unsigned int> indices) {
-    _grids[_focusGrid]->indices = indices;
+    _grids[_currentGridId]->indices = indices;
+}
+
+std::vector<unsigned int> GridWidget::getIndices() {
+    return _grids[_currentGridId]->indices;
 }
 
 void GridWidget::ShowContextMenu(const QPoint& pos) {
@@ -60,16 +64,25 @@ void GridWidget::ShowContextMenu(const QPoint& pos) {
     contextMenu.exec(mapToGlobal(pos));
 }
 
+void GridWidget::changeGrid(int gridIndex) {
+    Grid* grid = _grids[gridIndex];
+    _points->setSelectionIndices(grid->indices);
+    mv::events().notifyDatasetDataSelectionChanged(_points);
+}
+
 void GridWidget::newSelection() {
     _grids.push_back(new Grid(_parent->size().width()));
-    _focusGrid = _gridCount;
+    _currentGridId = _gridCount;
     _gridCount += 1;
+    changeGrid(_currentGridId);
 }
 
 void GridWidget::deleteSelection() {
-    _grids.erase(_grids.begin() + _focusGrid);
+    _mm->unloadImages(_grids[_currentGridId]->indices);
+    _grids.erase(_grids.begin() + _currentGridId);
     _gridCount -= 1;
-    _focusGrid = (_focusGrid - 1) % _gridCount;
+    _currentGridId = (_currentGridId - 1) % _gridCount;
+    changeGrid(_currentGridId);
 }
 
 
@@ -78,7 +91,7 @@ void GridWidget::wheelEvent(QWheelEvent* event)
     auto scroll = event->angleDelta().y();
     if (scroll != 0) {
         float scale = (event->angleDelta().y() > 0? 1.1: 0.91);
-        Grid* grid = _grids[_focusGrid];
+        Grid* grid = _grids[_currentGridId];
 
         grid->_scale *= scale;
 
@@ -108,17 +121,20 @@ void GridWidget::wheelEvent(QWheelEvent* event)
 }
 
 void GridWidget::mousePressEvent(QMouseEvent* event) {
-    Grid* grid;
-    for (int i=0; i<_gridCount; i++) {
-        grid = _grids[i];
-        if (grid->inside(event->pos())) {
-            _focusGrid = i;
-            break;
+    Grid* grid = _grids[_currentGridId];
+    if (!grid->inside(event->pos())) {
+        for (int i=0; i<_gridCount; i++) {
+            grid = _grids[i];
+            if (grid->inside(event->pos())) {
+                _currentGridId = i;
+                break;
+            }
         }
     }
-    grid = _grids[_focusGrid];
     grid->_originX = event->pos().x();
     grid->_originY = event->pos().y();
+
+    changeGrid(_currentGridId);
 
     update();
 }
@@ -128,7 +144,7 @@ bool GridWidget::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseMove)
     {
-        Grid* grid = _grids[_focusGrid];
+        Grid* grid = _grids[_currentGridId];
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         float newX = mouseEvent->pos().x();
         float newY = mouseEvent->pos().y();
@@ -146,6 +162,54 @@ bool GridWidget::eventFilter(QObject *obj, QEvent *event)
     return false;
 }
 
+void GridWidget::paint(int gridIndex, QPainter* qpainter, QPen* qpen) {
+    Grid* grid = _grids[gridIndex];
+    int gap = _imgWidth / 10;
+    int margin = _imgWidth / 20;
+
+    int numOfImages = grid->indices.size();
+    int numOfColumns, numOfRows;
+    if (numOfImages == 0) return;
+    else if (numOfImages == 1) {
+        numOfColumns = 1;
+        numOfRows = 1;
+    }
+    else {
+        numOfColumns = (int) sqrt(numOfImages) + 1;
+        numOfRows = (numOfImages-1) / numOfColumns + 1;
+    }
+    grid->_ratio = numOfRows*1.0 / numOfColumns;
+
+    qpainter->setWorldTransform(grid->_transform);
+    float screenScaling = size().width() / (numOfColumns * (_imgWidth + gap));
+    qpainter->scale(screenScaling, screenScaling);
+
+    int cnt = 0;
+    for (int index: grid->indices) {
+
+        int row = cnt / numOfColumns;
+        int col = cnt % numOfColumns;
+        QImage* img = _mm->getImage(index);
+
+        qpen->setWidth(96.0 / grid->_scale);
+        qpainter->setPen(*qpen);
+        if (gridIndex == _currentGridId) {
+            qpainter->drawRect(
+                margin + (gap + _imgWidth) * col, 
+                margin + (gap + _imgHeight) * row, 
+                _imgWidth, 
+                _imgHeight
+            );
+        }
+        qpainter->drawImage(
+            margin + (gap + _imgWidth) * col, 
+            margin + (gap + _imgHeight) * row, 
+            (img == nullptr? emptyImage : *img)
+        );
+        cnt ++;
+    }
+}
+
 void GridWidget::paintEvent(QPaintEvent* event) {
     int windowWidth = _parent->size().width();
     int windowHeight = _parent->size().height();
@@ -158,48 +222,8 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     qpen.setColor(QColor(255, 0, 0, 48));
 
     for (int i=0; i<_gridCount; i++) {
-        Grid* grid = _grids[i];
-
-        int numOfImages = grid->indices.size();
-        int numOfColumns, numOfRows;
-        if (numOfImages == 0) break;
-        else if (numOfImages == 1) {
-            numOfColumns = 1;
-            numOfRows = 1;
-        }
-        else {
-            numOfColumns = (int) sqrt(numOfImages) + 1;
-            numOfRows = (numOfImages-1) / numOfColumns + 1;
-        }
-        grid->_ratio = numOfRows*1.0 / numOfColumns;
-
-        qpainter.setWorldTransform(grid->_transform);
-        float screenScaling = size().width() / (numOfColumns * (_imgWidth + gap));
-        qpainter.scale(screenScaling, screenScaling);
-
-        int cnt = 0;
-        for (int index: grid->indices) {
-
-            int row = cnt / numOfColumns;
-            int col = cnt % numOfColumns;
-            QImage* img = _mm->getImage(index);
-
-            qpen.setWidth(96.0 / grid->_scale);
-            qpainter.setPen(qpen);
-            if (i == _focusGrid) {
-                qpainter.drawRect(
-                    margin + (gap + _imgWidth) * col, 
-                    margin + (gap + _imgHeight) * row, 
-                    _imgWidth, 
-                    _imgHeight
-                );
-            }
-            qpainter.drawImage(
-                margin + (gap + _imgWidth) * col, 
-                margin + (gap + _imgHeight) * row, 
-                (img == nullptr? emptyImage : *img)
-            );
-            cnt ++;
-        }
+        if (i == _currentGridId) continue;
+        else paint(i, &qpainter, &qpen);
     }
+    paint(_currentGridId, &qpainter, &qpen);
 }
