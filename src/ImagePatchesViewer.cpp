@@ -115,7 +115,7 @@ void ImagePatchesViewer::init()
 
 void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset) {
     _clusters = candidateDataset;
-
+    _points = candidateDataset->getParent();
     
     // TODO: change this!!!
     _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
@@ -139,7 +139,7 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
             _mm->indexFilenameMap[index] = fileName;
         }
         _mm->setImageDir(_imageDir);
-        _gridWidget = new GridWidget(&getWidget(), _imageDir, _mm);
+        _gridWidget = new GridWidget(&getWidget(), _imageDir, _mm, _points);
         _dropWidget->setShowDropIndicator(false);
     }
 }
@@ -148,6 +148,7 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
 {
     // Get smart pointer to dataset that changed
     auto changedDataSet = dataEvent->getDataset();
+    if (changedDataSet != _points) return;
 
     // Get GUI name of the dataset that changed
     const auto datasetGuiName = changedDataSet->getGuiName();
@@ -161,12 +162,7 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
         const auto& selectionSet = changedDataSet->getSelection<Points>();
 
 
-        // TODO: change the condition!!
-        if ( _validPath && 1
-                // _clusters->getGroupIndex() == changedDataSet->getGroupIndex() && 
-                // _clusters->getGroupIndex() != -1 
-            ) {
-            _gridWidget->_points = changedDataSet;
+        if ( _validPath) {
             int selectionSize = changedDataSet->getSelectionSize();
 
             if (selectionSize == 0) return;
@@ -176,7 +172,8 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
             std::vector<unsigned int> previousSelectionIndices = _gridWidget->getIndices();
             _gridWidget->setIndices(selectionIndices);
 
-            if (selectionIndices.size() == 0) return;
+            // smarter way to check if selection has changed?
+            if (previousSelectionIndices == selectionIndices) return;
             else {
                 _mm->loadImages(selectionIndices);
                 _gridWidget->resetView();

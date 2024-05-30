@@ -6,7 +6,6 @@
 #include <QMouseEvent>
 
 #include <map>
-#include <set>
 #include <vector>
 #include <future>
 
@@ -19,8 +18,8 @@ class GridWidget : public QWidget
 {
     Q_OBJECT
 public:
-    GridWidget(QWidget*, QString, MemoryManager*);
-    ~GridWidget() { delete _mm; };
+    GridWidget(QWidget*, QString, MemoryManager*, mv::Dataset<Points>);
+    ~GridWidget() { delete _mm; for (auto pair: _grids) delete pair.second; };
 
     void resetView() {
         _transform.reset(); 
@@ -32,13 +31,13 @@ public:
     // update currently focused grid
     void setIndices(std::vector<unsigned int>);
     std::vector<unsigned int> getIndices();
-    mv::Dataset<Points> _points;
 
 private:
     bool eventFilter(QObject*, QEvent*);
     void changeGrid(int);
 
     MemoryManager*  _mm;
+    mv::Dataset<Points> _points;
 
     QString         _imageDir;
     QWidget*        _parent;
@@ -52,7 +51,7 @@ private:
 
     int _gridCount;
     int _currentGridId;
-    std::vector<Grid*> _grids;
+    std::map<int, Grid*> _grids;
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
 

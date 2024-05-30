@@ -22,14 +22,14 @@ public:
     void unloadImages(std::vector<unsigned int>&);
     void loadImages(std::vector<unsigned int>&);
 
-    int findImageToDrop(std::set<int>&);
+    int findImageToDrop();
 
     QImage* getImage(int index) { return pointer[index]; };
 
 private:
     ImagePatchesViewer*                 _plugin;
     std::map<unsigned int, QImage*>     pointer;
-    std::map<unsigned int, QImage*>     cache;
+    std::map<unsigned int, int>         cache;
     std::map<unsigned int, int>         count;
     QString                             _imageDir;
     int                                 _cacheSize;

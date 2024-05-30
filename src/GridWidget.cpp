@@ -2,11 +2,12 @@
 #include <QImage>
 #include <cmath>
 
-GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) : 
+GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv::Dataset<Points> points) : 
     QWidget(parent),
     _parent(parent),
     _imageDir(imageDir),
-    _mm(mm)
+    _mm(mm),
+    _points(points)
 {
 
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -31,7 +32,7 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm) :
 
     emptyImage.fill(QColor(0, 0, 0, 0));
 
-    _grids.push_back(new Grid(parent->size().width()));
+    _grids[0] = new Grid(parent->size().width());
     _currentGridId = 0;
     _gridCount = 1;
 
@@ -71,7 +72,7 @@ void GridWidget::changeGrid(int gridIndex) {
 }
 
 void GridWidget::newSelection() {
-    _grids.push_back(new Grid(_parent->size().width()));
+    _grids[_gridCount] = new Grid(_parent->size().width());
     _currentGridId = _gridCount;
     _gridCount += 1;
     changeGrid(_currentGridId);
@@ -79,7 +80,11 @@ void GridWidget::newSelection() {
 
 void GridWidget::deleteSelection() {
     _mm->unloadImages(_grids[_currentGridId]->indices);
-    _grids.erase(_grids.begin() + _currentGridId);
+    delete _grids[_currentGridId];
+    for (int i=_currentGridId+1; i<_gridCount; i++) {
+        _grids[i-1] = _grids[i];
+    }
+    _grids.erase(_gridCount-1);
     _gridCount -= 1;
     _currentGridId = (_currentGridId - 1) % _gridCount;
     changeGrid(_currentGridId);
@@ -214,8 +219,6 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     int windowWidth = _parent->size().width();
     int windowHeight = _parent->size().height();
     resize(windowWidth, windowHeight);
-    int gap = _imgWidth / 10;
-    int margin = _imgWidth / 20;
 
     QPainter qpainter(this);
     QPen qpen;

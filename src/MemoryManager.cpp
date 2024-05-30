@@ -11,15 +11,17 @@ MemoryManager::MemoryManager(ImagePatchesViewer* p) :
 MemoryManager::~MemoryManager()
 {
     for (auto pair: pointer) delete pair.second;
-    for (auto pair: cache) delete pair.second;
 }
 
-int MemoryManager::findImageToDrop(std::set<int>& loads) {
+int MemoryManager::findImageToDrop() {
     int toDrop = -1;
+    int min_ = 101;
     for (auto pair: cache) {
-        if (!loads.count(pair.first)) {
-            toDrop = pair.first;
-            break;
+        int index = pair.first;
+        int priority = pair.second;
+        if (priority < min_) {
+            min_ = priority;
+            toDrop = index;
         }
     }
     return toDrop;
@@ -27,7 +29,7 @@ int MemoryManager::findImageToDrop(std::set<int>& loads) {
 
 void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
     for (auto index: toLoad) {
-        if (count[index] > 0) {
+        if (pointer[index] != nullptr) {
             
         }
         else {
@@ -49,13 +51,25 @@ void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
 
 void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
     for (auto index: toUnload) {
+        // other grids still need it
         if (count[index] > 1) {
-            count[index] -= 1;
+
         }
+        // image not needed anymore
         else if (count[index] == 1) {
-            count[index] = 0;
-            delete pointer[index];
-            pointer[index] = nullptr;
+            // cache still availble
+            if (cache.size() < _cacheSize || cache[index] > 0) {
+                cache[index] = std::min(cache[index], 100);
+            }
+            // cache full, find one to drop
+            else {
+                int toDrop = findImageToDrop();
+                delete pointer[toDrop];
+                pointer[toDrop] = nullptr;
+                cache.erase(toDrop);
+                cache[index] = 1;
+            }
         }
+        count[index] -= 1;
     }
 }
