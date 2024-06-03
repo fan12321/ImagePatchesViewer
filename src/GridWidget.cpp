@@ -27,8 +27,8 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _maxImagesInCache = (int) ceil(5.0 * 1024.0 * (1024.0 / _imgWidth) * (1024.0 / _imgHeight) * (1.0 / sizeof(*img)));
     delete img;
 
-    // _mm->setMaxImagesInCache(3);
-    _mm->setMaxImagesInCache(_maxImagesInCache);
+    _mm->setMaxImagesInCache(50);
+    // _mm->setMaxImagesInCache(_maxImagesInCache);
 
     emptyImage.fill(QColor(0, 0, 0, 0));
 
@@ -55,7 +55,7 @@ void GridWidget::ShowContextMenu(const QPoint& pos) {
     QAction action2("Delete selection", this);
     connect(&action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
 
-    action1.setEnabled(_gridCount < 3);
+    action1.setEnabled(_gridCount < MAX_SELECTION);
     action2.setEnabled(_gridCount != 1);
 
     contextMenu.addAction(&action1);
@@ -72,6 +72,9 @@ void GridWidget::changeGrid(int gridIndex) {
 }
 
 void GridWidget::newSelection() {
+    if (_grids[_currentGridId]->indices.size() == 0) {
+        return;
+    }
     _grids[_gridCount] = new Grid(_parent->size().width());
     _currentGridId = _gridCount;
     _gridCount += 1;
@@ -84,7 +87,6 @@ void GridWidget::deleteSelection() {
     for (int i=_currentGridId+1; i<_gridCount; i++) {
         _grids[i-1] = _grids[i];
     }
-    _grids.erase(_gridCount-1);
     _gridCount -= 1;
     _currentGridId = (_currentGridId - 1) % _gridCount;
     changeGrid(_currentGridId);

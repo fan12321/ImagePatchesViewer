@@ -69,6 +69,11 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
                 cache.erase(toDrop);
                 cache[index] = 1;
             }
+
+            // naive method
+            // free(pointer[index]);
+            // pointer[index] = nullptr;
+
         }
         count[index] -= 1;
     }

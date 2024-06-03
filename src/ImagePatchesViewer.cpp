@@ -118,16 +118,16 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
     _points = candidateDataset->getParent();
     
     // TODO: change this!!!
-    _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
-    _validPath = true;
+    // _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
+    // _validPath = true;
 
-    // _imageDir = QFileDialog::getExistingDirectory(
-    //     nullptr,
-    //     tr("Image folder"),
-    //     _imageDir,
-    //     QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-    // );
-    // _validPath = !_imageDir.isNull();
+    _imageDir = QFileDialog::getExistingDirectory(
+        nullptr,
+        tr("Image folder"),
+        _imageDir,
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    );
+    _validPath = !_imageDir.isNull();
 
 
     if (_validPath) {

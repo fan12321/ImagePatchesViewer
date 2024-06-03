@@ -12,6 +12,8 @@
 #include "MemoryManager.h"
 #include "Grid.h"
 
+#define MAX_SELECTION 3
+
 class MemoryManager;
 
 class GridWidget : public QWidget
@@ -19,7 +21,7 @@ class GridWidget : public QWidget
     Q_OBJECT
 public:
     GridWidget(QWidget*, QString, MemoryManager*, mv::Dataset<Points>);
-    ~GridWidget() { delete _mm; for (auto pair: _grids) delete pair.second; };
+    ~GridWidget() { delete _mm; for (int i=0; i<_gridCount; i++) delete _grids[i]; };
 
     void resetView() {
         _transform.reset(); 
@@ -51,7 +53,7 @@ private:
 
     int _gridCount;
     int _currentGridId;
-    std::map<int, Grid*> _grids;
+    Grid* _grids[MAX_SELECTION];
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
 
