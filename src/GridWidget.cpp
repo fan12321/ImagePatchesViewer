@@ -88,7 +88,7 @@ void GridWidget::deleteSelection() {
         _grids[i-1] = _grids[i];
     }
     _gridCount -= 1;
-    _currentGridId = (_currentGridId - 1) % _gridCount;
+    _currentGridId = (_currentGridId - 1 + _gridCount) % _gridCount;
     changeGrid(_currentGridId);
 }
 
@@ -129,11 +129,22 @@ void GridWidget::wheelEvent(QWheelEvent* event)
 
 void GridWidget::mousePressEvent(QMouseEvent* event) {
     Grid* grid = _grids[_currentGridId];
-    if (!grid->inside(event->pos())) {
+    int previousGridId = _currentGridId;
+    int previousGridSize = _grids[previousGridId]->indices.size();
+    if (!grid->inside(event->pos()) || previousGridSize == 0) {
         for (int i=0; i<_gridCount; i++) {
             grid = _grids[i];
             if (grid->inside(event->pos())) {
-                _currentGridId = i;
+                if (previousGridSize == 0) {
+                    for (int j=previousGridId+1; j<_gridCount; j++) {
+                        _grids[j-1] = _grids[j];
+                    }
+                    _gridCount -= 1;
+                    _currentGridId = (i > previousGridId)? i-1 : i;
+                }
+                else {
+                    _currentGridId = i;
+                }
                 break;
             }
         }
