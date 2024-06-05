@@ -14,3 +14,15 @@ bool Grid::inside(QPoint windowSpacePoint) {
         gridSpacePoint.y() < _size * _ratio
     );
 }
+
+void Grid::insertAfter(Grid* previous) {
+    this->_next = previous->_next;
+    this->_previous = previous;
+    previous->_next = this;
+    this->_next->_previous = this;
+}
+
+void Grid::removeFromLinkedList() {
+    this->_previous->_next = this->_next;
+    this->_next->_previous = this->_previous;
+}

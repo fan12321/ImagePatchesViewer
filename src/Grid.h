@@ -5,10 +5,15 @@
 class Grid {
 public:
     Grid(int);
+    ~Grid() {};
     bool inside(QPoint);
+    void insertAfter(Grid*);
+    void removeFromLinkedList();
 
     std::vector<unsigned int> indices;
 
+    Grid*       _next = this;
+    Grid*       _previous = this;
     float       _ratio = 1.0;
     float       _scale = 1.0;
     int         _x = 0;

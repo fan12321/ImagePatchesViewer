@@ -32,19 +32,26 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
 
     emptyImage.fill(QColor(0, 0, 0, 0));
 
-    _grids[0] = new Grid(parent->size().width());
-    _currentGridId = 0;
+    _currentGrid = new Grid(parent->size().width());
     _gridCount = 1;
 
     show();
 };
 
+GridWidget::~GridWidget() {
+    delete _mm;
+    for (int i=0; i<_gridCount; i++) {
+        _currentGrid = _currentGrid->_next;
+        delete _currentGrid->_previous;
+    }
+}
+
 void GridWidget::setIndices(std::vector<unsigned int> indices) {
-    _grids[_currentGridId]->indices = indices;
+    _currentGrid->indices = indices;
 }
 
 std::vector<unsigned int> GridWidget::getIndices() {
-    return _grids[_currentGridId]->indices;
+    return _currentGrid->indices;
 }
 
 void GridWidget::ShowContextMenu(const QPoint& pos) {
@@ -65,31 +72,31 @@ void GridWidget::ShowContextMenu(const QPoint& pos) {
     contextMenu.exec(mapToGlobal(pos));
 }
 
-void GridWidget::changeGrid(int gridIndex) {
-    Grid* grid = _grids[gridIndex];
+void GridWidget::changeGrid(Grid* grid) {
+    _currentGrid = grid;
     _points->setSelectionIndices(grid->indices);
     mv::events().notifyDatasetDataSelectionChanged(_points);
 }
 
 void GridWidget::newSelection() {
-    if (_grids[_currentGridId]->indices.size() == 0) {
+    if (_currentGrid->indices.size() == 0) {
         return;
     }
-    _grids[_gridCount] = new Grid(_parent->size().width());
-    _currentGridId = _gridCount;
+
+    Grid* newGrid = new Grid(_parent->size().width());
+    newGrid->insertAfter(_currentGrid);
+
     _gridCount += 1;
-    changeGrid(_currentGridId);
+    changeGrid(newGrid);
 }
 
 void GridWidget::deleteSelection() {
-    _mm->unloadImages(_grids[_currentGridId]->indices);
-    delete _grids[_currentGridId];
-    for (int i=_currentGridId+1; i<_gridCount; i++) {
-        _grids[i-1] = _grids[i];
-    }
+    _mm->unloadImages(_currentGrid->indices);
+    Grid* previousGrid = _currentGrid->_previous;
+    _currentGrid->removeFromLinkedList();
+    delete _currentGrid;
     _gridCount -= 1;
-    _currentGridId = (_currentGridId - 1 + _gridCount) % _gridCount;
-    changeGrid(_currentGridId);
+    changeGrid(previousGrid);
 }
 
 
@@ -98,19 +105,18 @@ void GridWidget::wheelEvent(QWheelEvent* event)
     auto scroll = event->angleDelta().y();
     if (scroll != 0) {
         float scale = (event->angleDelta().y() > 0? 1.1: 0.91);
-        Grid* grid = _grids[_currentGridId];
 
-        grid->_scale *= scale;
+        _currentGrid->_scale *= scale;
 
-        QPoint transformedMousePosition = grid->_transform.inverted().map(mapFromGlobal(QCursor::pos()));
-        grid->_x = transformedMousePosition.x();
-        grid->_y = transformedMousePosition.y();
+        QPoint transformedMousePosition = _currentGrid->_transform.inverted().map(mapFromGlobal(QCursor::pos()));
+        _currentGrid->_x = transformedMousePosition.x();
+        _currentGrid->_y = transformedMousePosition.y();
 
         // column major
         QTransform t1(
             1, 0, 0,
             0, 1, 0, 
-            grid->_x, grid->_y, 1    
+            _currentGrid->_x, _currentGrid->_y, 1    
         );
         QTransform s(
             scale, 0, 0, 
@@ -120,40 +126,32 @@ void GridWidget::wheelEvent(QWheelEvent* event)
         QTransform t2(
             1, 0, 0,
             0, 1, 0, 
-            -grid->_x, -grid->_y, 1    
+            -_currentGrid->_x, -_currentGrid->_y, 1    
         );
-        grid->_transform = t2 * s * t1 * grid->_transform;
+        _currentGrid->_transform = t2 * s * t1 * _currentGrid->_transform;
         update();
     }
 }
 
 void GridWidget::mousePressEvent(QMouseEvent* event) {
-    Grid* grid = _grids[_currentGridId];
-    int previousGridId = _currentGridId;
-    int previousGridSize = _grids[previousGridId]->indices.size();
-    if (!grid->inside(event->pos()) || previousGridSize == 0) {
-        for (int i=0; i<_gridCount; i++) {
-            grid = _grids[i];
-            if (grid->inside(event->pos())) {
-                if (previousGridSize == 0) {
-                    for (int j=previousGridId+1; j<_gridCount; j++) {
-                        _grids[j-1] = _grids[j];
-                    }
-                    _gridCount -= 1;
-                    _currentGridId = (i > previousGridId)? i-1 : i;
-                }
-                else {
-                    _currentGridId = i;
-                }
-                break;
-            }
+    Grid* grid = _currentGrid;
+    Grid* previousGrid = _currentGrid;
+    int previousSelectionSize = previousGrid->indices.size();
+    for (int i=0; i<_gridCount; i++) {
+        if (grid->inside(event->pos())) {
+            break;
         }
+        grid = grid->_next;
     }
     grid->_originX = event->pos().x();
     grid->_originY = event->pos().y();
+    if (previousSelectionSize == 0) {
+        previousGrid->removeFromLinkedList();
+        delete previousGrid;
+        _gridCount -= 1;
+    }
 
-    changeGrid(_currentGridId);
-
+    changeGrid(grid);
     update();
 }
 
@@ -162,26 +160,24 @@ bool GridWidget::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseMove)
     {
-        Grid* grid = _grids[_currentGridId];
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         float newX = mouseEvent->pos().x();
         float newY = mouseEvent->pos().y();
         QTransform translate(
             1, 0, 0, 
             0, 1, 0, 
-            (newX - grid->_originX) / grid->_scale, (newY - grid->_originY) / grid->_scale, 1
+            (newX - _currentGrid->_originX) / _currentGrid->_scale, (newY - _currentGrid->_originY) / _currentGrid->_scale, 1
         );
-        grid->_originX = newX;
-        grid->_originY = newY;
-        grid->_transform = translate * grid->_transform;
+        _currentGrid->_originX = newX;
+        _currentGrid->_originY = newY;
+        _currentGrid->_transform = translate * _currentGrid->_transform;
         update();
     }
 
     return false;
 }
 
-void GridWidget::paint(int gridIndex, QPainter* qpainter, QPen* qpen) {
-    Grid* grid = _grids[gridIndex];
+void GridWidget::paint(Grid* grid, QPainter* qpainter, QPen* qpen) {
     int gap = _imgWidth / 10;
     int margin = _imgWidth / 20;
 
@@ -211,7 +207,7 @@ void GridWidget::paint(int gridIndex, QPainter* qpainter, QPen* qpen) {
 
         qpen->setWidth(96.0 / grid->_scale);
         qpainter->setPen(*qpen);
-        if (gridIndex == _currentGridId) {
+        if (grid == _currentGrid) {
             qpainter->drawRect(
                 margin + (gap + _imgWidth) * col, 
                 margin + (gap + _imgHeight) * row, 
@@ -237,9 +233,9 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     QPen qpen;
     qpen.setColor(QColor(255, 0, 0, 48));
 
+    Grid* grid = _currentGrid;
     for (int i=0; i<_gridCount; i++) {
-        if (i == _currentGridId) continue;
-        else paint(i, &qpainter, &qpen);
+        grid = grid->_next;
+        paint(grid, &qpainter, &qpen);
     }
-    paint(_currentGridId, &qpainter, &qpen);
 }

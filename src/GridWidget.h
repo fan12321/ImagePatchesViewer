@@ -21,14 +21,14 @@ class GridWidget : public QWidget
     Q_OBJECT
 public:
     GridWidget(QWidget*, QString, MemoryManager*, mv::Dataset<Points>);
-    ~GridWidget() { delete _mm; for (int i=0; i<_gridCount; i++) delete _grids[i]; };
+    ~GridWidget();
 
     void resetView() {
         _transform.reset(); 
         resize(_parent->size().width(), _parent->size().height()); 
     }
     void paintEvent(QPaintEvent*) override;
-    void paint(int, QPainter*, QPen*);
+    void paint(Grid*, QPainter*, QPen*);
 
     // update currently focused grid
     void setIndices(std::vector<unsigned int>);
@@ -36,7 +36,7 @@ public:
 
 private:
     bool eventFilter(QObject*, QEvent*);
-    void changeGrid(int);
+    void changeGrid(Grid*);
 
     MemoryManager*  _mm;
     mv::Dataset<Points> _points;
@@ -52,8 +52,7 @@ private:
     float _ratio;
 
     int _gridCount;
-    int _currentGridId;
-    Grid* _grids[MAX_SELECTION];
+    Grid* _currentGrid;
 
     QImage emptyImage = QImage(_imgWidth, _imgHeight, QImage::Format_ARGB32);
 
