@@ -14,7 +14,7 @@ public:
 
     Grid*       _next = this;
     Grid*       _previous = this;
-    float       _ratio = 1.0;
+    float       _ratio = 0.0;
     float       _scale = 1.0;
     int         _x = 0;
     int         _y = 0;

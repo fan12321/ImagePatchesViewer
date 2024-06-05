@@ -73,16 +73,17 @@ void GridWidget::ShowContextMenu(const QPoint& pos) {
 }
 
 void GridWidget::changeGrid(Grid* grid) {
+    if (_currentGrid->indices.size() == 0) {
+        _currentGrid->removeFromLinkedList();
+        delete _currentGrid;
+        _gridCount -= 1;
+    }
     _currentGrid = grid;
     _points->setSelectionIndices(grid->indices);
     mv::events().notifyDatasetDataSelectionChanged(_points);
 }
 
 void GridWidget::newSelection() {
-    if (_currentGrid->indices.size() == 0) {
-        return;
-    }
-
     Grid* newGrid = new Grid(_parent->size().width());
     newGrid->insertAfter(_currentGrid);
 
@@ -134,9 +135,11 @@ void GridWidget::wheelEvent(QWheelEvent* event)
 }
 
 void GridWidget::mousePressEvent(QMouseEvent* event) {
+    // disable mouse click at the beginning
+    if (_currentGrid->indices.size() == 0 && _gridCount == 1) return;
+
     Grid* grid = _currentGrid;
-    Grid* previousGrid = _currentGrid;
-    int previousSelectionSize = previousGrid->indices.size();
+    if (_currentGrid->indices.size() == 0) grid = grid->_next; 
     for (int i=0; i<_gridCount; i++) {
         if (grid->inside(event->pos())) {
             break;
@@ -145,11 +148,6 @@ void GridWidget::mousePressEvent(QMouseEvent* event) {
     }
     grid->_originX = event->pos().x();
     grid->_originY = event->pos().y();
-    if (previousSelectionSize == 0) {
-        previousGrid->removeFromLinkedList();
-        delete previousGrid;
-        _gridCount -= 1;
-    }
 
     changeGrid(grid);
     update();
