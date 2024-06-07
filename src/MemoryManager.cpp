@@ -19,7 +19,8 @@ int MemoryManager::findImageToDrop() {
     for (auto pair: cache) {
         int index = pair.first;
         int priority = pair.second;
-        if (priority < min_) {
+        if (status[index] != LOADED) continue;
+        else if (priority < min_) {
             min_ = priority;
             toDrop = index;
         }
@@ -29,14 +30,13 @@ int MemoryManager::findImageToDrop() {
 
 void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
     for (auto index: toLoad) {
-        if (pointer[index] != nullptr) {
-            
-        }
-        else {
+        if (pointer[index] == nullptr && status[index] == NOTLOADED) {
             QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
+            status[index] = LOADING;
             QtConcurrent::task([this](QString p, int idx){
                 QImage* img = new QImage(p);
                 pointer[idx] = img;
+                status[idx] = LOADED;
             })
             .withArguments(path, index)
             .spawn()
@@ -59,21 +59,25 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
         else if (count[index] == 1) {
             // cache still availble
             if (cache.size() < _cacheSize || cache[index] > 0) {
-                cache[index] = std::min(cache[index], 100);
+                cache[index] = std::min(cache[index]+1, 100);
             }
             // cache full, find one to drop
             else {
                 int toDrop = findImageToDrop();
-                delete pointer[toDrop];
-                pointer[toDrop] = nullptr;
-                cache.erase(toDrop);
-                cache[index] = 1;
+                // delete pointer[toDrop];
+                if (toDrop == -1) {
+                    delete pointer[index];
+                    pointer[index] = nullptr;
+                    status[index] = NOTLOADED;
+                }
+                else {
+                    delete pointer[toDrop];
+                    pointer[toDrop] = nullptr;
+                    status[toDrop] = NOTLOADED;
+                    cache.erase(toDrop);
+                    cache[index] = 1;
+                }
             }
-
-            // naive method
-            // free(pointer[index]);
-            // pointer[index] = nullptr;
-
         }
         count[index] -= 1;
     }
