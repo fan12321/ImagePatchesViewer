@@ -97,7 +97,8 @@ void GridWidget::deleteSelection() {
     _currentGrid->removeFromLinkedList();
     delete _currentGrid;
     _gridCount -= 1;
-    changeGrid(previousGrid);
+    _currentGrid = previousGrid;
+    changeGrid(_currentGrid);
 }
 
 
