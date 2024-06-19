@@ -14,6 +14,9 @@
 
 #define MAX_SELECTION 3
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 class MemoryManager;
 
 class GridWidget : public QWidget
@@ -66,4 +69,5 @@ public slots:
     void ShowContextMenu(const QPoint&);
     void newSelection();
     void deleteSelection();
+    void rearrange();
 };

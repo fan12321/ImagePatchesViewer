@@ -4,6 +4,8 @@ Grid::Grid(int w) :
     _size(w)
 {
     _transform.reset();
+    _transform.scale(0.6, 0.6);
+    _scale = 0.6;
 }
 
 bool Grid::inside(QPoint windowSpacePoint) {

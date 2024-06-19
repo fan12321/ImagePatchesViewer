@@ -84,11 +84,30 @@ void GridWidget::changeGrid(Grid* grid) {
 }
 
 void GridWidget::newSelection() {
+    rearrange();
     Grid* newGrid = new Grid(_parent->size().width());
     newGrid->insertAfter(_currentGrid);
 
     _gridCount += 1;
     changeGrid(newGrid);
+}
+
+void GridWidget::rearrange() {
+    Grid* it = _currentGrid;
+    float newScale = MIN(0.8 / _gridCount, 0.5);
+    for (int i=0; i<_gridCount; i++) {
+        float newX = i * (1.0 / _gridCount) * _parent->size().width();
+        float newY = 0.55 * _parent->size().height();
+
+        it->_scale = newScale;
+        it->_transform = QTransform(
+            newScale, 0, 0, 
+            0, newScale, 0, 
+            newX, newY, 1
+        );
+        it = it->_next;
+    }
+    update();
 }
 
 void GridWidget::deleteSelection() {
