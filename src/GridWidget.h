@@ -27,6 +27,7 @@ public:
     ~GridWidget();
 
     void resetView() {
+        _currentGrid->_keepLayout = false;
         _transform.reset(); 
         resize(_parent->size().width(), _parent->size().height()); 
     }
@@ -69,5 +70,6 @@ public slots:
     void ShowContextMenu(const QPoint&);
     void newSelection();
     void deleteSelection();
+    void toggleLayout();
     void rearrange();
 };

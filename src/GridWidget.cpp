@@ -61,12 +61,15 @@ void GridWidget::ShowContextMenu(const QPoint& pos) {
     connect(&action1, SIGNAL(triggered()), this, SLOT(newSelection()));
     QAction action2("Delete selection", this);
     connect(&action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
+    QAction action3("layout", this);
+    connect(&action3, SIGNAL(triggered()), this, SLOT(toggleLayout()));
 
     action1.setEnabled(_gridCount < MAX_SELECTION);
     action2.setEnabled(_gridCount != 1);
 
     contextMenu.addAction(&action1);
     contextMenu.addAction(&action2);
+    contextMenu.addAction(&action3);
 
 
     contextMenu.exec(mapToGlobal(pos));
@@ -118,6 +121,27 @@ void GridWidget::deleteSelection() {
     _gridCount -= 1;
     _currentGrid = previousGrid;
     changeGrid(_currentGrid);
+}
+
+void GridWidget::toggleLayout() {
+    int h = 221;
+    int w = 186;
+    if (_currentGrid->_keepLayout) {
+        _currentGrid->_keepLayout = false;
+        _currentGrid->_leftOffset = w;
+        _currentGrid->_topOffset = h;
+        update();
+    }
+    else {
+        _currentGrid->_leftOffset = w;
+        _currentGrid->_topOffset = h;
+        for (int idx: _currentGrid->indices) {
+            if (idx / w < _currentGrid->_topOffset) _currentGrid->_topOffset = idx / w;
+            if (idx % w < _currentGrid->_leftOffset) _currentGrid->_leftOffset = idx % w;
+        }
+        _currentGrid->_keepLayout = true;
+        update();
+    }
 }
 
 
@@ -217,10 +241,18 @@ void GridWidget::paint(Grid* grid, QPainter* qpainter, QPen* qpen) {
     qpainter->scale(screenScaling, screenScaling);
 
     int cnt = 0;
+    int w = 186;
     for (int index: grid->indices) {
 
-        int row = cnt / numOfColumns;
-        int col = cnt % numOfColumns;
+        int row, col;
+        if (grid->_keepLayout) {
+            row = index / w - grid->_topOffset;
+            col = index % w - grid->_leftOffset;
+        }
+        else {
+            row = cnt / numOfColumns;
+            col = cnt % numOfColumns;
+        }
         QImage* img = _mm->getImage(index);
 
         qpen->setWidth(96.0 / grid->_scale);

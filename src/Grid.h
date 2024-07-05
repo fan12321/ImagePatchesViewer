@@ -22,4 +22,7 @@ public:
     int         _originY = 0;
     QTransform  _transform;
     int         _size;
+
+    bool        _keepLayout = false;
+    int         _leftOffset, _topOffset;
 };
