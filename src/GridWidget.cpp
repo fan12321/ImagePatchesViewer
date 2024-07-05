@@ -35,6 +35,15 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _currentGrid = new Grid(parent->size().width());
     _gridCount = 1;
 
+
+    action1 = new QAction("New selection", this);
+    connect(action1, SIGNAL(triggered()), this, SLOT(newSelection()));
+    action2 = new QAction("Delete selection", this);
+    connect(action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
+    action3 = new QAction("Relative position", this);
+    action3->setCheckable(true);
+    connect(action3, SIGNAL(triggered()), this, SLOT(toggleLayout()));
+
     show();
 };
 
@@ -57,19 +66,12 @@ std::vector<unsigned int> GridWidget::getIndices() {
 void GridWidget::ShowContextMenu(const QPoint& pos) {
     QMenu contextMenu(tr("Context menu"), this);
 
-    QAction action1("New selection", this);
-    connect(&action1, SIGNAL(triggered()), this, SLOT(newSelection()));
-    QAction action2("Delete selection", this);
-    connect(&action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
-    QAction action3("layout", this);
-    connect(&action3, SIGNAL(triggered()), this, SLOT(toggleLayout()));
+    action1->setEnabled(_gridCount < MAX_SELECTION);
+    action2->setEnabled(_gridCount != 1);
 
-    action1.setEnabled(_gridCount < MAX_SELECTION);
-    action2.setEnabled(_gridCount != 1);
-
-    contextMenu.addAction(&action1);
-    contextMenu.addAction(&action2);
-    contextMenu.addAction(&action3);
+    contextMenu.addAction(action1);
+    contextMenu.addAction(action2);
+    contextMenu.addAction(action3);
 
 
     contextMenu.exec(mapToGlobal(pos));
@@ -83,6 +85,7 @@ void GridWidget::changeGrid(Grid* grid) {
     }
     _currentGrid = grid;
     _points->setSelectionIndices(grid->indices);
+    action3->setChecked(_currentGrid->_originPosition);
     mv::events().notifyDatasetDataSelectionChanged(_points);
 }
 
@@ -126,8 +129,8 @@ void GridWidget::deleteSelection() {
 void GridWidget::toggleLayout() {
     int h = 221;
     int w = 186;
-    if (_currentGrid->_keepLayout) {
-        _currentGrid->_keepLayout = false;
+    if (_currentGrid->_originPosition) {
+        _currentGrid->_originPosition = false;
         _currentGrid->_leftOffset = w;
         _currentGrid->_topOffset = h;
         update();
@@ -139,7 +142,7 @@ void GridWidget::toggleLayout() {
             if (idx / w < _currentGrid->_topOffset) _currentGrid->_topOffset = idx / w;
             if (idx % w < _currentGrid->_leftOffset) _currentGrid->_leftOffset = idx % w;
         }
-        _currentGrid->_keepLayout = true;
+        _currentGrid->_originPosition = true;
         update();
     }
 }
@@ -245,7 +248,7 @@ void GridWidget::paint(Grid* grid, QPainter* qpainter, QPen* qpen) {
     for (int index: grid->indices) {
 
         int row, col;
-        if (grid->_keepLayout) {
+        if (grid->_originPosition) {
             row = index / w - grid->_topOffset;
             col = index % w - grid->_leftOffset;
         }

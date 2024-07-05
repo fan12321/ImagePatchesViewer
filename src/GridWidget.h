@@ -27,7 +27,8 @@ public:
     ~GridWidget();
 
     void resetView() {
-        _currentGrid->_keepLayout = false;
+        _currentGrid->_originPosition = false;
+        action3->setChecked(false);
         _transform.reset(); 
         resize(_parent->size().width(), _parent->size().height()); 
     }
@@ -48,6 +49,10 @@ private:
     QString         _imageDir;
     QWidget*        _parent;
     QTransform      _transform;
+
+    QAction* action1;
+    QAction* action2;
+    QAction* action3;
 
     int   _maxImagesInCache;
     

@@ -23,6 +23,6 @@ public:
     QTransform  _transform;
     int         _size;
 
-    bool        _keepLayout = false;
+    bool        _originPosition = false;
     int         _leftOffset, _topOffset;
 };
