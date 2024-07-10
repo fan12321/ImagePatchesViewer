@@ -33,17 +33,22 @@ void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
         if (pointer[index] == nullptr && status[index] == NOTLOADED) {
             QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
             status[index] = LOADING;
-            QtConcurrent::task([this](QString p, int idx){
-                QImage* img = new QImage(p);
-                pointer[idx] = img;
-                status[idx] = LOADED;
-            })
-            .withArguments(path, index)
-            .spawn()
-            .then([this](){
-                _plugin->getGridWidget()->update();
-            });
-
+            if (_totalLoaded > max_) {
+                postponeLoadIndices.insert(index);
+            }
+            else {
+                _totalLoaded += 1;
+                QtConcurrent::task([this](QString p, int idx){
+                    QImage* img = new QImage(p);
+                    pointer[idx] = img;
+                    status[idx] = LOADED;
+                })
+                .withArguments(path, index)
+                .spawn()
+                .then([this](){
+                    _plugin->getGridWidget()->update();
+                });
+            }
         }
         count[index] += 1;
     }
@@ -57,9 +62,14 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
         }
         // image not needed anymore
         else if (count[index] == 1) {
+            if (postponeLoadIndices.count(index)) {
+                postponeLoadIndices.erase(index);
+                status[index] = NOTLOADED;
+            }
             // cache still availble
-            if (cache.size() < _cacheSize || cache[index] > 0) {
+            else if (cache.size() < _cacheSize || cache[index] > 0) {
                 cache[index] = std::min(cache[index]+1, 100);
+                _totalLoaded -= 1;
             }
             // cache full, find one to drop
             else {
@@ -77,8 +87,32 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
                     cache.erase(toDrop);
                     cache[index] = 1;
                 }
+                _totalLoaded -= 1;
             }
         }
         count[index] -= 1;
+    }
+    postponeLoad();
+}
+
+void MemoryManager::postponeLoad() {
+    auto it = postponeLoadIndices.begin();
+    while (it != postponeLoadIndices.end() && _totalLoaded <= max_) {
+        int index = *it;
+        it = postponeLoadIndices.erase(it);
+        _totalLoaded += 1;
+
+        QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
+        status[index] = LOADING;
+        QtConcurrent::task([this](QString p, int idx){
+            QImage* img = new QImage(p);
+            pointer[idx] = img;
+            status[idx] = LOADED;
+        })
+        .withArguments(path, index)
+        .spawn()
+        .then([this](){
+            _plugin->getGridWidget()->update();
+        });
     }
 }

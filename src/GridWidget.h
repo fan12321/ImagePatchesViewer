@@ -53,8 +53,6 @@ private:
     QAction* action1;
     QAction* action2;
     QAction* action3;
-
-    int   _maxImagesInCache;
     
     float _imgWidth;
     float _imgHeight;

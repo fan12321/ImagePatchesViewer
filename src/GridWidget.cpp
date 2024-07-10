@@ -24,11 +24,13 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _ratio = _imgWidth / _imgHeight;
 
     // 5GB of images in cache, wierd calculation to avoid overflow
-    _maxImagesInCache = (int) ceil(5.0 * 1024.0 * (1024.0 / _imgWidth) * (1024.0 / _imgHeight) * (1.0 / sizeof(*img)));
+    int imageBytes = img->sizeInBytes();
+    int maxImagesInCache = (int) floor(5.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
     delete img;
 
-    _mm->setMaxImagesInCache(50);
-    // _mm->setMaxImagesInCache(_maxImagesInCache);
+    _mm->setMaxImagesInCache(300);
+    _mm->setImageBytes(imageBytes);
+    // qDebug() << maxImagesInCache << " " << imageBytes;
 
     emptyImage.fill(QColor(0, 0, 0, 0));
 
@@ -124,6 +126,7 @@ void GridWidget::deleteSelection() {
     _gridCount -= 1;
     _currentGrid = previousGrid;
     changeGrid(_currentGrid);
+    update();
 }
 
 void GridWidget::toggleLayout() {
