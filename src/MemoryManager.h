@@ -18,8 +18,8 @@ public:
     std::map<int, QString>  indexFilenameMap;
 
     void setImageDir(QString path) { _imageDir = path; };
-    void setImageBytes(int b) { _imageBytes = b; }
-    void setMaxImagesInCache(int n) { _cacheSize = n; };
+    void setCacheSize(int n) { _cacheSize = n; };
+    void setMaxImagesLoaded(int n) { _maxImagesLoaded = n; };
 
     void unloadImages(std::vector<unsigned int>&);
     void loadImages(std::vector<unsigned int>&);
@@ -30,14 +30,14 @@ public:
     QImage* getImage(int index) { return pointer[index]; };
 
 private:
-    int max_ = 300;
+    int _maxImagesLoaded = 300;
     int _totalLoaded = 0;
     std::set<unsigned int> postponeLoadIndices;
 
     ImagePatchesViewer*                     _plugin;
     std::map<unsigned int, QImage*>         pointer;
-    std::map<unsigned int, int>             cache;
-    std::map<unsigned int, int>             count;
+    std::map<unsigned int, int>             cache;      /* stores the priority value */
+    std::map<unsigned int, int>             count;      /* stores the number of grids that are using the image */
     
     enum LoadingStatus {
         NOTLOADED = 0, 
@@ -47,5 +47,4 @@ private:
     std::map<unsigned int, LoadingStatus>   status;
     QString                                 _imageDir;
     unsigned int                            _cacheSize;
-    unsigned int                            _imageBytes;
 };

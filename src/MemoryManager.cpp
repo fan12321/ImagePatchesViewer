@@ -33,7 +33,7 @@ void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
         if (pointer[index] == nullptr && status[index] == NOTLOADED) {
             QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
             status[index] = LOADING;
-            if (_totalLoaded > max_) {
+            if (_totalLoaded > _maxImagesLoaded) {
                 postponeLoadIndices.insert(index);
             }
             else {
@@ -66,15 +66,14 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
                 postponeLoadIndices.erase(index);
                 status[index] = NOTLOADED;
             }
-            // cache still availble
-            else if (cache.size() < _cacheSize || cache[index] > 0) {
+            // cache still availble or already in cache
+            else if (cache.size() < _cacheSize || cache.count(index)) {
                 cache[index] = std::min(cache[index]+1, 100);
                 _totalLoaded -= 1;
             }
             // cache full, find one to drop
             else {
                 int toDrop = findImageToDrop();
-                // delete pointer[toDrop];
                 if (toDrop == -1) {
                     delete pointer[index];
                     pointer[index] = nullptr;
@@ -97,7 +96,14 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
 
 void MemoryManager::postponeLoad() {
     auto it = postponeLoadIndices.begin();
-    while (it != postponeLoadIndices.end() && _totalLoaded <= max_) {
+    while (it != postponeLoadIndices.end() && _totalLoaded <= _maxImagesLoaded) {
+        if (_totalLoaded == _maxImagesLoaded) {
+            int toDrop = findImageToDrop();
+            delete pointer[toDrop];
+            pointer[toDrop] = nullptr;
+            status[toDrop] = NOTLOADED;
+            cache.erase(toDrop);
+        }
         int index = *it;
         it = postponeLoadIndices.erase(it);
         _totalLoaded += 1;

@@ -23,14 +23,14 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _imgHeight = img->size().height();
     _ratio = _imgWidth / _imgHeight;
 
-    // 5GB of images in cache, wierd calculation to avoid overflow
     int imageBytes = img->sizeInBytes();
-    int maxImagesInCache = (int) floor(5.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
     delete img;
 
-    _mm->setMaxImagesInCache(300);
-    _mm->setImageBytes(imageBytes);
-    // qDebug() << maxImagesInCache << " " << imageBytes;
+    // 5GB cache, 30GB max of total images loaded
+    int cacheSize = floor(5.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
+    int maxImagesLoaded = floor(30.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
+    _mm->setCacheSize(cacheSize);
+    _mm->setMaxImagesLoaded(maxImagesLoaded);
 
     emptyImage.fill(QColor(0, 0, 0, 0));
 
