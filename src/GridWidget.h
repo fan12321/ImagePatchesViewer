@@ -33,7 +33,6 @@ public:
         resize(_parent->size().width(), _parent->size().height()); 
     }
     void paintEvent(QPaintEvent*) override;
-    void paint(Grid*, QPainter*, QPen*);
 
     // update currently focused grid
     void setIndices(std::vector<unsigned int>);
@@ -42,6 +41,8 @@ public:
 private:
     bool eventFilter(QObject*, QEvent*);
     void changeGrid(Grid*);
+
+    void paint(Grid*, QPainter*, QPen*);
 
     MemoryManager*  _mm;
     mv::Dataset<Points> _points;

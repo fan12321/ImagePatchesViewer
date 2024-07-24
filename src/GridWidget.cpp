@@ -29,7 +29,7 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     // 5GB cache, 30GB max of total images loaded
     int cacheSize = floor(5.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
     int maxImagesLoaded = floor(30.0 * 1024.0 * 1024.0 * 1024.0 * (1.0 / imageBytes));
-    _mm->setCacheSize(cacheSize);
+    _mm->setMaxCacheSize(cacheSize);
     _mm->setMaxImagesLoaded(maxImagesLoaded);
 
     emptyImage.fill(QColor(0, 0, 0, 0));
@@ -261,7 +261,7 @@ void GridWidget::paint(Grid* grid, QPainter* qpainter, QPen* qpen) {
         }
         QImage* img = _mm->getImage(index);
 
-        qpen->setWidth(96.0 / grid->_scale);
+        qpen->setWidth(gap);
         qpainter->setPen(*qpen);
         if (grid == _currentGrid) {
             qpainter->drawRect(
@@ -286,8 +286,9 @@ void GridWidget::paintEvent(QPaintEvent* event) {
     resize(windowWidth, windowHeight);
 
     QPainter qpainter(this);
-    QPen qpen;
-    qpen.setColor(QColor(255, 0, 0, 48));
+    QPen qpen, qpen_background;
+    qpen.setColor(QColor(255, 180, 180, 230));
+    qpen.setJoinStyle(Qt::MiterJoin);
 
     Grid* grid = _currentGrid;
     for (int i=0; i<_gridCount; i++) {

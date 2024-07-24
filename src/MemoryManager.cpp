@@ -5,7 +5,7 @@
 MemoryManager::MemoryManager(ImagePatchesViewer* p) :
     _plugin(p)
 {
-
+    _start = time(nullptr);
 }
 
 MemoryManager::~MemoryManager()
@@ -15,11 +15,11 @@ MemoryManager::~MemoryManager()
 
 int MemoryManager::findImageToDrop() {
     int toDrop = -1;
-    int min_ = 101;
+    double min_ = std::numeric_limits<double>::infinity();
     for (auto pair: cache) {
         int index = pair.first;
         int priority = pair.second;
-        if (status[index] != LOADED) continue;
+        if (pointer[index] == nullptr) continue;
         else if (priority < min_) {
             min_ = priority;
             toDrop = index;
@@ -33,15 +33,21 @@ void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
         if (pointer[index] == nullptr && status[index] == NOTLOADED) {
             QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
             status[index] = LOADING;
-            if (_totalLoaded > _maxImagesLoaded) {
+            if (_imagesOnScreen > _maxImagesOnScreen) {
                 postponeLoadIndices.insert(index);
             }
             else {
-                _totalLoaded += 1;
+                _imagesOnScreen += 1;
                 QtConcurrent::task([this](QString p, int idx){
                     QImage* img = new QImage(p);
-                    pointer[idx] = img;
-                    status[idx] = LOADED;
+
+                    if (pointer[idx] || status[idx] == NOTLOADED) {
+                        delete img;
+                    }
+                    else {
+                        pointer[idx] = img;
+                        status[idx] = LOADED;
+                    }
                 })
                 .withArguments(path, index)
                 .spawn()
@@ -66,10 +72,16 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
                 postponeLoadIndices.erase(index);
                 status[index] = NOTLOADED;
             }
-            // cache still availble or already in cache
-            else if (cache.size() < _cacheSize || cache.count(index)) {
-                cache[index] = std::min(cache[index]+1, 100);
-                _totalLoaded -= 1;
+            // already in cache
+            else if (cache.count(index)) {
+                cache[index] = difftime(time(nullptr), _start);
+                _imagesOnScreen -= 1;
+            }
+            // cache still availble
+            else if (_cacheSize < _maxCacheSize) {
+                cache[index] = difftime(time(nullptr), _start);
+                _imagesOnScreen -= 1;
+                _cacheSize += 1;
             }
             // cache full, find one to drop
             else {
@@ -84,9 +96,9 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
                     pointer[toDrop] = nullptr;
                     status[toDrop] = NOTLOADED;
                     cache.erase(toDrop);
-                    cache[index] = 1;
+                    cache[index] = difftime(time(nullptr), _start);
                 }
-                _totalLoaded -= 1;
+                _imagesOnScreen -= 1;
             }
         }
         count[index] -= 1;
@@ -96,8 +108,8 @@ void MemoryManager::unloadImages(std::vector<unsigned int>& toUnload) {
 
 void MemoryManager::postponeLoad() {
     auto it = postponeLoadIndices.begin();
-    while (it != postponeLoadIndices.end() && _totalLoaded <= _maxImagesLoaded) {
-        if (_totalLoaded == _maxImagesLoaded) {
+    while (it != postponeLoadIndices.end() && _imagesOnScreen <= _maxImagesOnScreen) {
+        if (_imagesOnScreen == _maxImagesOnScreen) {
             int toDrop = findImageToDrop();
             delete pointer[toDrop];
             pointer[toDrop] = nullptr;
@@ -106,14 +118,20 @@ void MemoryManager::postponeLoad() {
         }
         int index = *it;
         it = postponeLoadIndices.erase(it);
-        _totalLoaded += 1;
+        _imagesOnScreen += 1;
 
         QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
         status[index] = LOADING;
         QtConcurrent::task([this](QString p, int idx){
             QImage* img = new QImage(p);
-            pointer[idx] = img;
-            status[idx] = LOADED;
+
+            if (pointer[idx] || status[idx] == NOTLOADED) {
+                delete img;
+            }
+            else {
+                pointer[idx] = img;
+                status[idx] = LOADED;
+            }
         })
         .withArguments(path, index)
         .spawn()
