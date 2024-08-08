@@ -116,17 +116,28 @@ void ImagePatchesViewer::init()
 void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset) {
     _clusters = candidateDataset;
     _points = candidateDataset->getParent();
-    
-    // TODO: change this!!!
-    // _imageDir = QString("/home/chen-chi/Desktop/ManiVault/projects/images");
-    // _validPath = true;
 
-    _imageDir = QFileDialog::getExistingDirectory(
-        nullptr,
-        tr("Image folder"),
-        _imageDir,
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-    );
+    bool pathKnown = false;
+    for (auto dataset: _points->getChildren()) {
+        if (dataset->getDataType() == TextType) {
+            pathKnown = true;
+            auto textData= mv::data().getDataset<Text>(dataset->getId());
+            _imageDir = textData->getColumn("root folder")[0];
+        }
+    }
+
+    if (!pathKnown) {
+        _imageDir = QFileDialog::getExistingDirectory(
+            nullptr,
+            tr("Image folder"),
+            _imageDir,
+            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+        );
+
+        auto rootFolder = mv::data().createDataset<Text>("Text", "Root folder", _points);
+        std::vector<QString> rootFolder_stdvector{_imageDir};
+        rootFolder->addColumn("root folder", rootFolder_stdvector);
+    }
     _validPath = !_imageDir.isNull();
 
 

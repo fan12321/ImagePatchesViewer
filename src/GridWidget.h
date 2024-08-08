@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QWheelEvent>
 #include <QMouseEvent>
+#include <QKeyEvent>
 
 #include <map>
 #include <vector>
@@ -67,7 +68,7 @@ private:
 protected:
     void wheelEvent(QWheelEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
-
+    void keyPressEvent(QKeyEvent*) override;
 
 
 public slots:

@@ -9,7 +9,7 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _mm(mm),
     _points(points)
 {
-
+    setFocusPolicy(Qt::ClickFocus);
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), 
         this, SLOT(ShowContextMenu(const QPoint&)));
@@ -38,7 +38,7 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     _gridCount = 1;
 
 
-    action1 = new QAction("New selection", this);
+    action1 = new QAction("New selection", this);setFocusPolicy(Qt::ClickFocus);
     connect(action1, SIGNAL(triggered()), this, SLOT(newSelection()));
     action2 = new QAction("Delete selection", this);
     connect(action2, SIGNAL(triggered()), this, SLOT(deleteSelection()));
@@ -46,6 +46,7 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     action3->setCheckable(true);
     connect(action3, SIGNAL(triggered()), this, SLOT(toggleLayout()));
 
+    setFocus();
     show();
 };
 
@@ -201,6 +202,13 @@ void GridWidget::mousePressEvent(QMouseEvent* event) {
 
     changeGrid(grid);
     update();
+}
+
+void GridWidget::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Space) {
+        changeGrid(_currentGrid->_next);
+        update();
+    }
 }
 
 

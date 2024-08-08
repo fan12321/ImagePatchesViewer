@@ -6,6 +6,7 @@
 
 #include <PointData/PointData.h>
 #include <ClusterData/ClusterData.h>
+#include <TextData/TextData.h>
 
 #include <QResizeEvent>
 #include <QWidget>
@@ -58,6 +59,7 @@ protected:
     DropWidget*             _dropWidget;                /** Widget for drag and drop behavior */
     mv::Dataset<Points>     _points;                    /** Points smart pointer */
     mv::Dataset<Clusters>   _clusters;
+    mv::Dataset<Text>       _rootFolder;
     QString                 _currentDatasetName;        /** Name of the current dataset */
     QString                 _imageDir;                  /** Path to the images */
     bool                    _validPath;                 /** Check if "_imageDir" valid or not */
