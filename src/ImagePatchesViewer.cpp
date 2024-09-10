@@ -122,7 +122,7 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
         if (dataset->getDataType() == TextType) {
             pathKnown = true;
             auto textData= mv::data().getDataset<Text>(dataset->getId());
-            _imageDir = textData->getColumn("root folder")[0];
+            _imageDir = textData->getColumn("image folder")[0];
         }
     }
 
@@ -134,9 +134,9 @@ void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset)
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
         );
 
-        auto rootFolder = mv::data().createDataset<Text>("Text", "Root folder", _points);
+        auto rootFolder = mv::data().createDataset<Text>("Text", "Image folder", _points);
         std::vector<QString> rootFolder_stdvector{_imageDir};
-        rootFolder->addColumn("root folder", rootFolder_stdvector);
+        rootFolder->addColumn("image folder", rootFolder_stdvector);
     }
     _validPath = !_imageDir.isNull();
 
