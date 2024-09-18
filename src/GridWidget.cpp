@@ -2,10 +2,9 @@
 #include <QImage>
 #include <cmath>
 
-GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv::Dataset<Points> points) : 
+GridWidget::GridWidget(QWidget* parent, MemoryManager* mm, mv::Dataset<Points> points) : 
     QWidget(parent),
     _parent(parent),
-    _imageDir(imageDir),
     _mm(mm),
     _points(points)
 {
@@ -18,7 +17,8 @@ GridWidget::GridWidget(QWidget* parent, QString imageDir, MemoryManager* mm, mv:
     installEventFilter(this);
     resize(parent->size().width(), parent->size().height());
 
-    QImage* img = new QImage(_imageDir + "/" + _mm->indexFilenameMap[0] + ".jpg");
+    // QImage* img = new QImage(_mm->indexFilenameMap[0]);
+    QImage* img = new QImage(_mm->filenames[0]);
     _imgWidth = img->size().width();
     _imgHeight = img->size().height();
     _ratio = _imgWidth / _imgHeight;

@@ -5,7 +5,7 @@
 #include <widgets/DropWidget.h>
 
 #include <PointData/PointData.h>
-#include <ClusterData/ClusterData.h>
+// #include <ClusterData/ClusterData.h>
 #include <TextData/TextData.h>
 
 #include <QResizeEvent>
@@ -51,15 +51,14 @@ public:
      */
     void onDataEvent(mv::DatasetEvent* dataEvent);
 
-    void imageDirInquire(mv::Dataset<Clusters>);
+    void imageDirInquire(mv::Dataset<Text>);
 
     GridWidget* getGridWidget() { return _gridWidget; };
 
 protected:
     DropWidget*             _dropWidget;                /** Widget for drag and drop behavior */
     mv::Dataset<Points>     _points;                    /** Points smart pointer */
-    mv::Dataset<Clusters>   _clusters;
-    mv::Dataset<Text>       _rootFolder;
+    mv::Dataset<Text>       _filenames;
     QString                 _currentDatasetName;        /** Name of the current dataset */
     QString                 _imageDir;                  /** Path to the images */
     bool                    _validPath;                 /** Check if "_imageDir" valid or not */

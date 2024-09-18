@@ -31,7 +31,8 @@ int MemoryManager::findImageToDrop() {
 void MemoryManager::loadImages(std::vector<unsigned int>& toLoad) {
     for (auto index: toLoad) {
         if (pointer[index] == nullptr && status[index] == NOTLOADED) {
-            QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
+            // QString path = indexFilenameMap[index];
+            QString path = filenames[index];
             status[index] = LOADING;
             if (_imagesOnScreen > _maxImagesOnScreen) {
                 postponeLoadIndices.insert(index);
@@ -120,7 +121,8 @@ void MemoryManager::postponeLoad() {
         it = postponeLoadIndices.erase(it);
         _imagesOnScreen += 1;
 
-        QString path = _imageDir + "/" + indexFilenameMap[index] + ".jpg";
+        // QString path = indexFilenameMap[index];
+        QString path = filenames[index];
         status[index] = LOADING;
         QtConcurrent::task([this](QString p, int idx){
             QImage* img = new QImage(p);

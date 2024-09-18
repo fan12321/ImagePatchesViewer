@@ -18,8 +18,8 @@ public:
     ~MemoryManager();
 
     std::map<int, QString>  indexFilenameMap;
+    std::vector<QString> filenames;
 
-    void setImageDir(QString path) { _imageDir = path; };
     void setMaxCacheSize(int n) { _maxCacheSize = n; };
     void setMaxImagesLoaded(int n) { _maxImagesOnScreen = n; };
 
@@ -48,7 +48,6 @@ private:
         LOADED = 2
     };
     std::map<unsigned int, LoadingStatus>   status;
-    QString                                 _imageDir;
     unsigned int                            _maxCacheSize;
     unsigned int                            _cacheSize;
 };

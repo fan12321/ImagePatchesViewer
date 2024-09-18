@@ -15,7 +15,7 @@ ImagePatchesViewer::ImagePatchesViewer(const PluginFactory* factory) :
     ViewPlugin(factory),
     _dropWidget(nullptr),
     _points(),
-    _clusters(), 
+    _filenames(), 
     _currentDatasetName(),
     _currentDatasetNameLabel(new QLabel()), 
     _imageDir(""), 
@@ -66,7 +66,7 @@ void ImagePatchesViewer::init()
         const auto datasetGuiName = dataset->getGuiName();
         const auto datasetId = dataset->getId();
         const auto dataType = dataset->getDataType();
-        const auto dataTypes = DataTypes({ ClusterType });
+        const auto dataTypes = DataTypes({ TextType });
 
         // Visually indicate if the dataset is of the wrong data type and thus cannot be dropped
         if (!dataTypes.contains(dataType)) {
@@ -74,19 +74,19 @@ void ImagePatchesViewer::init()
         }
         else {
             // Get points dataset from the core
-            auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
+            auto candidateDataset = mv::data().getDataset<Text>(datasetId);
 
             // Accept points datasets drag and drop
-            if (dataType == ClusterType) {
+            if (dataType == TextType) {
                 const auto description = QString("Load %1 into image patches view").arg(datasetGuiName);
 
-                if (_clusters == candidateDataset) {
+                if (_filenames == candidateDataset) {
                     // Dataset cannot be dropped because it is already loaded
                     dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
                 }
                 else {
                     // Dataset can be dropped
-                    dropRegions << new DropWidget::DropRegion(this, "Clusters", description, "map-marker-alt", true, [this, candidateDataset]() {
+                    dropRegions << new DropWidget::DropRegion(this, "Texts", description, "map-marker-alt", true, [this, candidateDataset]() {
                         imageDirInquire(candidateDataset);
                     });
                 }
@@ -97,12 +97,12 @@ void ImagePatchesViewer::init()
     });
 
     // Respond when the name of the dataset in the dataset reference changes
-    connect(&_clusters, &Dataset<Points>::guiNameChanged, this, [this]() {
+    connect(&_filenames, &Dataset<Points>::guiNameChanged, this, [this]() {
 
-        auto newDatasetName = _clusters->getGuiName();
+        auto newDatasetName = _filenames->getGuiName();
 
         // Update the current dataset name label
-        _currentDatasetNameLabel->setText(QString("Current clusters dataset: %1").arg(newDatasetName));
+        _currentDatasetNameLabel->setText(QString("Current text dataset: %1").arg(newDatasetName));
 
         // Only show the drop indicator when nothing is loaded in the dataset reference
         _dropWidget->setShowDropIndicator(newDatasetName.isEmpty());
@@ -113,86 +113,82 @@ void ImagePatchesViewer::init()
     _eventListener.registerDataEventByType(PointType, std::bind(&ImagePatchesViewer::onDataEvent, this, std::placeholders::_1));
 }
 
-void ImagePatchesViewer::imageDirInquire(mv::Dataset<Clusters> candidateDataset) {
-    _clusters = candidateDataset;
-    _points = candidateDataset->getParent();
+void ImagePatchesViewer::imageDirInquire(mv::Dataset<Text> candidateDataset) {
+    // look for csv file or ask for one
 
-    bool pathKnown = false;
-    for (auto dataset: _points->getChildren()) {
-        if (dataset->getDataType() == TextType) {
-            pathKnown = true;
-            auto textData= mv::data().getDataset<Text>(dataset->getId());
-            _imageDir = textData->getColumn("image folder")[0];
-        }
-    }
+    _filenames = candidateDataset;
+    _points = candidateDataset->getChildren()[0];
 
-    if (!pathKnown) {
-        _imageDir = QFileDialog::getExistingDirectory(
-            nullptr,
-            tr("Image folder"),
-            _imageDir,
-            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-        );
+    // bool pathKnown = false;
+    // for (auto dataset: _points->getChildren()) {
+    //     if (dataset->getDataType() == TextType) {
+    //         pathKnown = true;
+    //         auto textData= mv::data().getDataset<Text>(dataset->getId());
+    //         _imageDir = textData->getColumn("image folder")[0];
+    //     }
+    // }
 
-        auto rootFolder = mv::data().createDataset<Text>("Text", "Image folder", _points);
-        std::vector<QString> rootFolder_stdvector{_imageDir};
-        rootFolder->addColumn("image folder", rootFolder_stdvector);
-    }
-    _validPath = !_imageDir.isNull();
+    // if (!pathKnown) {
+    //     _imageDir = QFileDialog::getExistingDirectory(
+    //         nullptr,
+    //         tr("Image folder"),
+    //         _imageDir,
+    //         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    //     );
+
+    //     auto rootFolder = mv::data().createDataset<Text>("Text", "Image folder", _points);
+    //     std::vector<QString> rootFolder_stdvector{_imageDir};
+    //     rootFolder->addColumn("image folder", rootFolder_stdvector);
+    // }
+    // _validPath = !_imageDir.isNull();
 
 
-    if (_validPath) {
+    // if (_validPath) {
 
-        auto clusters = _clusters->getClusters();
-        for (auto cluster: clusters) {
-            int index = cluster.getIndices()[0];
-            QString fileName = cluster.getName();
-            _mm->indexFilenameMap[index] = fileName;
-        }
-        _mm->setImageDir(_imageDir);
-        _gridWidget = new GridWidget(&getWidget(), _imageDir, _mm, _points);
+    //     auto clusters = _clusters->getClusters();
+    //     for (auto cluster: clusters) {
+    //         int index = cluster.getIndices()[0];
+    //         QString fileName = cluster.getName();
+    //         _mm->indexFilenameMap[index] = fileName;
+    //     }
+    //     _mm->setImageDir(_imageDir);
+        _mm->filenames = candidateDataset->getColumn(candidateDataset->getColumnNames()[0]);
+        _gridWidget = new GridWidget(&getWidget(), _mm, _points);
         _dropWidget->setShowDropIndicator(false);
-    }
+    // }
 }
 
 void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
 {
     // Get smart pointer to dataset that changed
     auto changedDataSet = dataEvent->getDataset();
-    if (changedDataSet != _points) return;
+    if (changedDataSet->getParent() != _filenames) return;
 
     // Get GUI name of the dataset that changed
     const auto datasetGuiName = changedDataSet->getGuiName();
 
     // The data event has a type so that we know what type of data event occurred (e.g. data added, changed, removed, renamed, selection changes)
     if (dataEvent->getType() == EventType::DatasetDataSelectionChanged) {
-        // Cast the data event to a data selection changed event
-        const auto dataSelectionChangedEvent = static_cast<DatasetDataSelectionChangedEvent*>(dataEvent);
 
-        // Get the selection set that changed
-        const auto& selectionSet = changedDataSet->getSelection<Points>();
+        int selectionSize = changedDataSet->getSelectionSize();
 
+        if (selectionSize == 0) return;
 
-        if ( _validPath) {
-            int selectionSize = changedDataSet->getSelectionSize();
+        auto selectionIndices = changedDataSet->getSelectionIndices();
 
-            if (selectionSize == 0) return;
+        std::vector<unsigned int> previousSelectionIndices = _gridWidget->getIndices();
+        _gridWidget->setIndices(selectionIndices);
 
-            auto selectionIndices = changedDataSet->getSelectionIndices();
-
-            std::vector<unsigned int> previousSelectionIndices = _gridWidget->getIndices();
-            _gridWidget->setIndices(selectionIndices);
-
-            // smarter way to check if selection has changed?
-            if (previousSelectionIndices == selectionIndices) return;
-            else {
-                _mm->loadImages(selectionIndices);
-                _gridWidget->resetView();
-                _gridWidget->update();
-                _mm->unloadImages(previousSelectionIndices);
-            }
-
+        // smarter way to check if selection has changed?
+        if (previousSelectionIndices == selectionIndices) return;
+        else {
+            _mm->loadImages(selectionIndices);
+            _gridWidget->resetView();
+            _gridWidget->update();
+            _mm->unloadImages(previousSelectionIndices);
         }
+
+        
     }
 }
 
@@ -205,7 +201,7 @@ ViewPlugin* ImagePatchesViewerFactory::produce()
 mv::DataTypes ImagePatchesViewerFactory::supportedDataTypes() const
 {
     DataTypes supportedTypes;
-    supportedTypes.append(ClusterType);
+    supportedTypes.append(TextType);
 
     return supportedTypes;
 }
@@ -220,7 +216,7 @@ mv::gui::PluginTriggerActions ImagePatchesViewerFactory::getPluginTriggerActions
 
     const auto numberOfDatasets = datasets.count();
 
-    if (numberOfDatasets == 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, ClusterType)) {
+    if (numberOfDatasets == 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, TextType)) {
         auto pluginTriggerAction = new PluginTriggerAction(const_cast<ImagePatchesViewerFactory*>(this), this, "Image Patches Viewer", "Image grid", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
                 getPluginInstance()->imageDirInquire(dataset);

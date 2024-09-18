@@ -24,7 +24,7 @@ class GridWidget : public QWidget
 {
     Q_OBJECT
 public:
-    GridWidget(QWidget*, QString, MemoryManager*, mv::Dataset<Points>);
+    GridWidget(QWidget*, MemoryManager*, mv::Dataset<Points>);
     ~GridWidget();
 
     void resetView() {
@@ -48,7 +48,6 @@ private:
     MemoryManager*  _mm;
     mv::Dataset<Points> _points;
 
-    QString         _imageDir;
     QWidget*        _parent;
     QTransform      _transform;
 
