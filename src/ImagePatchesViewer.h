@@ -51,7 +51,7 @@ public:
      */
     void onDataEvent(mv::DatasetEvent* dataEvent);
 
-    void imageDirInquire(mv::Dataset<Text>);
+    void createGridWidget(mv::Dataset<Text>);
 
     GridWidget* getGridWidget() { return _gridWidget; };
 

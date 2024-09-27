@@ -87,7 +87,7 @@ void ImagePatchesViewer::init()
                 else {
                     // Dataset can be dropped
                     dropRegions << new DropWidget::DropRegion(this, "Texts", description, "map-marker-alt", true, [this, candidateDataset]() {
-                        imageDirInquire(candidateDataset);
+                        createGridWidget(candidateDataset);
                     });
                 }
             }
@@ -113,49 +113,17 @@ void ImagePatchesViewer::init()
     _eventListener.registerDataEventByType(PointType, std::bind(&ImagePatchesViewer::onDataEvent, this, std::placeholders::_1));
 }
 
-void ImagePatchesViewer::imageDirInquire(mv::Dataset<Text> candidateDataset) {
-    // look for csv file or ask for one
-
-    _filenames = candidateDataset;
-    _points = candidateDataset->getChildren()[0];
-
-    // bool pathKnown = false;
-    // for (auto dataset: _points->getChildren()) {
-    //     if (dataset->getDataType() == TextType) {
-    //         pathKnown = true;
-    //         auto textData= mv::data().getDataset<Text>(dataset->getId());
-    //         _imageDir = textData->getColumn("image folder")[0];
-    //     }
-    // }
-
-    // if (!pathKnown) {
-    //     _imageDir = QFileDialog::getExistingDirectory(
-    //         nullptr,
-    //         tr("Image folder"),
-    //         _imageDir,
-    //         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-    //     );
-
-    //     auto rootFolder = mv::data().createDataset<Text>("Text", "Image folder", _points);
-    //     std::vector<QString> rootFolder_stdvector{_imageDir};
-    //     rootFolder->addColumn("image folder", rootFolder_stdvector);
-    // }
-    // _validPath = !_imageDir.isNull();
-
-
-    // if (_validPath) {
-
-    //     auto clusters = _clusters->getClusters();
-    //     for (auto cluster: clusters) {
-    //         int index = cluster.getIndices()[0];
-    //         QString fileName = cluster.getName();
-    //         _mm->indexFilenameMap[index] = fileName;
-    //     }
-    //     _mm->setImageDir(_imageDir);
+void ImagePatchesViewer::createGridWidget(mv::Dataset<Text> candidateDataset) {
+    if (candidateDataset->getChildren().size()) {
+        _points = candidateDataset->getChildren()[0];
+        _filenames = candidateDataset;
         _mm->filenames = candidateDataset->getColumn(candidateDataset->getColumnNames()[0]);
         _gridWidget = new GridWidget(&getWidget(), _mm, _points);
         _dropWidget->setShowDropIndicator(false);
-    // }
+    }
+    else {
+        // todo: add error widget
+    }
 }
 
 void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
@@ -219,7 +187,7 @@ mv::gui::PluginTriggerActions ImagePatchesViewerFactory::getPluginTriggerActions
     if (numberOfDatasets == 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, TextType)) {
         auto pluginTriggerAction = new PluginTriggerAction(const_cast<ImagePatchesViewerFactory*>(this), this, "Image Patches Viewer", "Image grid", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
-                getPluginInstance()->imageDirInquire(dataset);
+                getPluginInstance()->createGridWidget(dataset);
         });
         pluginTriggerActions << pluginTriggerAction;
     }
