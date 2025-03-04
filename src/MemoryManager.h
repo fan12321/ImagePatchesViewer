@@ -8,7 +8,7 @@
 #include <QString>
 #include <QDebug>
 #include <time.h>
-#include<limits>
+#include <limits>
 
 class ImagePatchesViewer;
 

@@ -20,10 +20,14 @@
 
 class MemoryManager;
 
-class GridWidget : public QWidget
+class GridWidget : public QWidget, public mv::util::Serializable
 {
     Q_OBJECT
 public:
+
+    void fromVariantMap(const QVariantMap& variantMap) override;
+    QVariantMap toVariantMap() const override;
+
     GridWidget(QWidget*, MemoryManager*, mv::Dataset<Points>);
     ~GridWidget();
 

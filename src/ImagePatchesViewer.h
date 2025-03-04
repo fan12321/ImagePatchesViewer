@@ -33,6 +33,8 @@ class ImagePatchesViewer : public ViewPlugin
 
 public:
 
+    void fromVariantMap(const QVariantMap& variantMap) override;
+    QVariantMap toVariantMap() const override;
     /**
      * Constructor
      * @param factory Pointer to the plugin factory

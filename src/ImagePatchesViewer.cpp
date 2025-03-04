@@ -160,6 +160,32 @@ void ImagePatchesViewer::onDataEvent(mv::DatasetEvent* dataEvent)
     }
 }
 
+void ImagePatchesViewer::fromVariantMap(const QVariantMap& variantMap)
+{
+    ViewPlugin::fromVariantMap(variantMap);
+    variantMapMustContain(variantMap, "PointsDataset");
+    variantMapMustContain(variantMap, "TextDataset");
+    _points = mv::data().getDataset(variantMap["PointsDataset"].toString());
+    _filenames = mv::data().getDataset(variantMap["TextDataset"].toString());
+    _mm->filenames = _filenames->getColumn(_filenames->getColumnNames()[0]);
+    _gridWidget = new GridWidget(&getWidget(), _mm, _points);
+    _dropWidget->setShowDropIndicator(false);
+    _gridWidget->fromParentVariantMap(variantMap);
+}
+
+QVariantMap ImagePatchesViewer::toVariantMap() const
+{
+    auto variantMap = ViewPlugin::toVariantMap();
+
+    variantMap.insert({
+        { "PointsDataset", _points->getId() }, 
+        { "TextDataset", _filenames->getId() }
+    });
+
+    _gridWidget->insertIntoVariantMap(variantMap);
+    return variantMap;
+}
+
 
 ViewPlugin* ImagePatchesViewerFactory::produce()
 {
