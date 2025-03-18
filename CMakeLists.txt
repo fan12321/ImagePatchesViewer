@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.22)
+
+option(MV_UNITY_BUILD "Combine target source files into batches for faster compilation" OFF)
 
 # -----------------------------------------------------------------------------
-# PROJECT Plugin
+# ExampleView Plugin
 # -----------------------------------------------------------------------------
-set(PROJECT "ImagePatchesViewer")
-PROJECT(${PROJECT})
+PROJECT("ImagePatchesViewer")
 
 # -----------------------------------------------------------------------------
 # CMake Options
@@ -15,31 +16,28 @@ set(CMAKE_AUTOMOC ON)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /EHsc /MP /permissive- /Zc:__cplusplus")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MD")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif(MSVC)
-
-# -----------------------------------------------------------------------------
-# Set install directory
-# -----------------------------------------------------------------------------
-# Check if the directory to the ManiVault installation has been provided
-if(NOT DEFINED MV_INSTALL_DIR)
-    set(MV_INSTALL_DIR "" CACHE PATH "Directory where ManiVault is installed")
-    message(FATAL_ERROR "Please set MV_INSTALL_DIR to the directory where ManiVault is installed")
-endif()
-file(TO_CMAKE_PATH ${MV_INSTALL_DIR} MV_INSTALL_DIR)
 
 # -----------------------------------------------------------------------------
 # Dependencies
 # -----------------------------------------------------------------------------
 find_package(Qt6 COMPONENTS Widgets WebEngineWidgets Concurrent REQUIRED)
 
+find_package(ManiVault COMPONENTS Core PointData ClusterData TextData CONFIG QUIET)
+
+# -----------------------------------------------------------------------------
+# Include Common directory
+# -----------------------------------------------------------------------------
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Common ${CMAKE_CURRENT_BINARY_DIR}/Common)
+
 # -----------------------------------------------------------------------------
 # Source files
 # -----------------------------------------------------------------------------
 # Define the plugin sources
-set(PROJECT_SOURCES
+set(PLUGIN_SOURCES
     src/ImagePatchesViewer.h
     src/ImagePatchesViewer.cpp
     src/ImagePatchesViewer.json
@@ -52,75 +50,64 @@ set(PROJECT_SOURCES
 )
 
 set(PLUGIN_MOC_HEADERS
-	src/ImagePatchesViewer.h
+    src/ImagePatchesViewer.h
 )
 
-source_group( Plugin FILES ${PROJECT_SOURCES})
+source_group(Plugin FILES ${PLUGIN_SOURCES})
+source_group(Common FILES ${COMMON_FILES})
 
 # -----------------------------------------------------------------------------
 # CMake Target
 # -----------------------------------------------------------------------------
 # Create dynamic library for the plugin
-add_library(${PROJECT} SHARED ${PROJECT_SOURCES})
-
-qt_wrap_cpp(PROJECT_MOC ${PLUGIN_MOC_HEADERS} TARGET ${PROJECT})
-target_sources(${PROJECT} PRIVATE ${PROJECT_MOC})
+add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCES} ${COMMON_FILES})
 
 # -----------------------------------------------------------------------------
 # Target include directories
 # -----------------------------------------------------------------------------
 # Include ManiVault headers, including system data plugins
-target_include_directories(${PROJECT} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
+target_include_directories(${PROJECT_NAME} PRIVATE "${ManiVault_INCLUDE_DIR}")
 
 # -----------------------------------------------------------------------------
 # Target properties
 # -----------------------------------------------------------------------------
-# Request C++17
-target_compile_features(${PROJECT} PRIVATE cxx_std_17)
+# Request C++20
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+
+# Enable unity build
+if(MV_UNITY_BUILD)
+    set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ON)
+endif()
 
 # -----------------------------------------------------------------------------
 # Target library linking
 # -----------------------------------------------------------------------------
 # Link to Qt libraries
-target_link_libraries(${PROJECT} PRIVATE Qt6::Widgets)
-target_link_libraries(${PROJECT} PRIVATE Qt6::WebEngineWidgets)
-target_link_libraries(${PROJECT} PRIVATE Qt6::Concurrent)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WebEngineWidgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Concurrent)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core)
 
 # Link to ManiVault and data plugins
-# The link path in this repo assumes that the ManiVault core was built locally
-# in contrast to having been installed with an installer. In the latter case you'll have
-# to adapt the MV_LINK_PATH and PLUGIN_LINK_PATH to your install folder
-set(MV_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/lib")
-set(PLUGIN_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/$<IF:$<CXX_COMPILER_ID:MSVC>,lib,Plugins>")
-set(MV_LINK_SUFFIX $<IF:$<CXX_COMPILER_ID:MSVC>,${CMAKE_LINK_LIBRARY_SUFFIX},${CMAKE_SHARED_LIBRARY_SUFFIX}>)
-
-set(MV_LINK_LIBRARY "${MV_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}MV_Public${MV_LINK_SUFFIX}")
-set(POINTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${MV_LINK_SUFFIX}") 
-set(IMAGEDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ImageData${MV_LINK_SUFFIX}") 
-set(CLUSTERDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${MV_LINK_SUFFIX}")
-set(TEXTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}TextData${MV_LINK_SUFFIX}")
-
-
-target_link_libraries(${PROJECT} PRIVATE "${MV_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} PRIVATE "${POINTDATA_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} PRIVATE "${IMAGEDATA_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} PRIVATE "${TEXTDATA_LINK_LIBRARY}")
+target_link_libraries(${PROJECT_NAME} PRIVATE ManiVault::Core)
+target_link_libraries(${PROJECT_NAME} PRIVATE ManiVault::PointData)
+target_link_libraries(${PROJECT_NAME} PRIVATE ManiVault::ClusterData)
+target_link_libraries(${PROJECT_NAME} PRIVATE ManiVault::TextData)
 
 # -----------------------------------------------------------------------------
 # Target installation
 # -----------------------------------------------------------------------------
-# Install the shared plugin libary to the "Plugins" folder in the ManiVault install directory
-install(TARGETS ${PROJECT}
+# Install the shared plugin library to the "Plugins" folder in the ManiVault install directory
+install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION Plugins COMPONENT PLUGINS # Windows .dll
     LIBRARY DESTINATION Plugins COMPONENT PLUGINS # Linux/Mac .so
 )
 
-add_custom_command(TARGET ${PROJECT} POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}"
         --install ${CMAKE_CURRENT_BINARY_DIR}
         --config $<CONFIGURATION>
-        --prefix ${MV_INSTALL_DIR}/$<CONFIGURATION>
+        --prefix ${ManiVault_INSTALL_DIR}/$<CONFIGURATION>
 )
 
 # -----------------------------------------------------------------------------
@@ -128,6 +115,6 @@ add_custom_command(TARGET ${PROJECT} POST_BUILD
 # -----------------------------------------------------------------------------
 # Automatically set the debug environment (command + working directory) for MSVC
 if(MSVC)
-    set_property(TARGET ${PROJECT} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${MV_INSTALL_DIR}/debug,${MV_INSTALL_DIR}/release>)
-    set_property(TARGET ${PROJECT} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${MV_INSTALL_DIR}/debug/ManiVault Studio.exe","${MV_INSTALL_DIR}/release/ManiVault Studio.exe">)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${ManiVault_INSTALL_DIR}/Debug,$<IF:$<CONFIG:RELWITHDEBINFO>,${ManiVault_INSTALL_DIR}/RelWithDebInfo,${ManiVault_INSTALL_DIR}/Release>>)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${ManiVault_INSTALL_DIR}/Debug/ManiVault Studio.exe",$<IF:$<CONFIG:RELWITHDEBINFO>,"${ManiVault_INSTALL_DIR}/RelWithDebInfo/ManiVault Studio.exe","${ManiVault_INSTALL_DIR}/Release/ManiVault Studio.exe">>)
 endif()

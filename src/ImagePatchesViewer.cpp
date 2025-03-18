@@ -211,7 +211,7 @@ mv::gui::PluginTriggerActions ImagePatchesViewerFactory::getPluginTriggerActions
     const auto numberOfDatasets = datasets.count();
 
     if (numberOfDatasets == 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, TextType)) {
-        auto pluginTriggerAction = new PluginTriggerAction(const_cast<ImagePatchesViewerFactory*>(this), this, "Image Patches Viewer", "Image grid", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+        auto pluginTriggerAction = new PluginTriggerAction(const_cast<ImagePatchesViewerFactory*>(this), this, "Image Patches Viewer", "Image grid", icon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
                 getPluginInstance()->createGridWidget(dataset);
         });
